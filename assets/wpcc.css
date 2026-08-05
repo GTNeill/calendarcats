@@ -1,0 +1,1101 @@
+/**
+ * WPCalendarCats front-end styles.
+ *
+ * Everything is namespaced under .wpcc-app and scoped with CSS custom
+ * properties so a host theme can restyle the calendar without touching
+ * this file. Category colours arrive per-element as --wpcc-cat.
+ */
+
+/* ── Theme tokens ───────────────────────────────────────────────────── */
+
+.wpcc-app {
+	--wpcc-accent: #147671;
+	--wpcc-highlight: #cf2c28;
+	--wpcc-radius: 12px;
+	--wpcc-radius-sm: 8px;
+	--wpcc-gap: 16px;
+	--wpcc-font: inherit;
+	--wpcc-shadow: 0 1px 2px rgba( 0, 0, 0, 0.06 ), 0 4px 16px rgba( 0, 0, 0, 0.05 );
+
+	box-sizing: border-box;
+	width: 100%;
+	margin: 0 auto;
+	font-family: var( --wpcc-font );
+	font-size: 15px;
+	line-height: 1.5;
+	color: var( --wpcc-text );
+	-webkit-font-smoothing: antialiased;
+}
+
+.wpcc-app *,
+.wpcc-app *::before,
+.wpcc-app *::after {
+	box-sizing: border-box;
+}
+
+.wpcc-theme-light {
+	--wpcc-bg: #fffbf4;
+	--wpcc-surface: #ffffff;
+	--wpcc-surface-2: #fbf7f0;
+	--wpcc-border: #c8dde1;
+	--wpcc-border-soft: #e4eef0;
+	--wpcc-text: #0b3e4a;
+	--wpcc-muted: #5b7c86;
+	--wpcc-faint: #8aa5ad;
+	--wpcc-out-bg: #f4f0e9;
+	--wpcc-hover: #f2f8f9;
+}
+
+.wpcc-theme-dark {
+	--wpcc-bg: #0b2a33;
+	--wpcc-surface: #0d3340;
+	--wpcc-surface-2: #103a49;
+	--wpcc-border: #1a4a58;
+	--wpcc-border-soft: #163d49;
+	--wpcc-text: #fffbf4;
+	--wpcc-muted: #8ab8c0;
+	--wpcc-faint: #5f8d97;
+	--wpcc-out-bg: #0a242c;
+	--wpcc-hover: #12404f;
+	--wpcc-shadow: 0 1px 2px rgba( 0, 0, 0, 0.4 ), 0 6px 20px rgba( 0, 0, 0, 0.35 );
+}
+
+.wpcc-app {
+	background: var( --wpcc-bg );
+	border-radius: var( --wpcc-radius );
+	padding: 20px;
+}
+
+.wpcc-app a {
+	color: var( --wpcc-accent );
+	text-decoration: none;
+	overflow-wrap: anywhere;
+}
+
+.wpcc-app a:hover,
+.wpcc-app a:focus {
+	text-decoration: underline;
+}
+
+.wpcc-icon {
+	display: inline-block;
+	line-height: 1;
+	font-style: normal;
+}
+
+.wpcc-icon-img {
+	display: inline-block;
+	vertical-align: -2px;
+	object-fit: contain;
+	border-radius: 3px;
+}
+
+/* ── Controls ───────────────────────────────────────────────────────── */
+
+.wpcc-controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: var( --wpcc-gap );
+}
+
+.wpcc-meta {
+	min-width: 0;
+}
+
+.wpcc-range {
+	font-size: 1.15rem;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	color: var( --wpcc-text );
+}
+
+.wpcc-updated {
+	margin-top: 2px;
+	font-size: 0.75rem;
+	color: var( --wpcc-faint );
+}
+
+.wpcc-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.wpcc-group {
+	display: inline-flex;
+	align-items: stretch;
+	border: 1px solid var( --wpcc-border );
+	border-radius: 999px;
+	overflow: hidden;
+	background: var( --wpcc-surface );
+}
+
+.wpcc-group .wpcc-btn {
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+}
+
+.wpcc-group .wpcc-btn + .wpcc-btn {
+	border-left: 1px solid var( --wpcc-border-soft );
+}
+
+.wpcc-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 34px;
+	padding: 0 14px;
+	margin: 0;
+	font: inherit;
+	font-size: 0.85rem;
+	font-weight: 600;
+	line-height: 1;
+	color: var( --wpcc-muted );
+	background: var( --wpcc-surface );
+	border: 1px solid var( --wpcc-border );
+	border-radius: 999px;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+	text-transform: none;
+	box-shadow: none;
+}
+
+.wpcc-btn:hover {
+	background: var( --wpcc-hover );
+	color: var( --wpcc-text );
+}
+
+.wpcc-btn:focus-visible {
+	outline: 2px solid var( --wpcc-accent );
+	outline-offset: 1px;
+}
+
+.wpcc-btn.is-active {
+	color: #fff;
+	background: var( --wpcc-accent );
+}
+
+.wpcc-btn.is-active:hover {
+	color: #fff;
+	background: var( --wpcc-accent );
+	filter: brightness( 1.08 );
+}
+
+.wpcc-icon-btn {
+	min-width: 34px;
+	padding: 0 10px;
+	font-size: 1rem;
+}
+
+.wpcc-submit {
+	display: inline-flex;
+	align-items: center;
+	min-height: 34px;
+	padding: 0 14px;
+	font-size: 0.85rem;
+	font-weight: 700;
+	color: #fff !important;
+	background: var( --wpcc-highlight );
+	border-radius: 999px;
+	text-decoration: none !important;
+}
+
+.wpcc-submit:hover {
+	filter: brightness( 1.08 );
+}
+
+/* ── Errors and warnings ────────────────────────────────────────────── */
+
+.wpcc-error,
+.wpcc-warning-box {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: var( --wpcc-gap );
+	padding: 12px 14px;
+	font-size: 0.85rem;
+	border-radius: var( --wpcc-radius-sm );
+	border-left: 4px solid var( --wpcc-highlight );
+	background: var( --wpcc-surface );
+	color: var( --wpcc-text );
+}
+
+.wpcc-error strong,
+.wpcc-warning-box strong {
+	font-weight: 700;
+}
+
+.wpcc-error span {
+	color: var( --wpcc-muted );
+}
+
+.wpcc-warning-box {
+	border-left-color: #d99a00;
+}
+
+.wpcc-retry {
+	margin-left: auto;
+}
+
+/* ── Search ─────────────────────────────────────────────────────────── */
+
+.wpcc-search {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: var( --wpcc-gap );
+	padding: 0 10px;
+	background: var( --wpcc-surface );
+	border: 1px solid var( --wpcc-border );
+	border-radius: 999px;
+}
+
+.wpcc-search.is-active {
+	border-color: var( --wpcc-accent );
+}
+
+.wpcc-search-ico {
+	flex: none;
+	font-size: 0.85rem;
+	opacity: 0.7;
+}
+
+.wpcc-search input {
+	flex: 1 1 auto;
+	min-width: 0;
+	min-height: 38px;
+	padding: 0;
+	margin: 0;
+	font: inherit;
+	font-size: 0.9rem;
+	color: var( --wpcc-text );
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+	outline: none;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.wpcc-search input::placeholder {
+	color: var( --wpcc-faint );
+}
+
+.wpcc-search input::-webkit-search-cancel-button {
+	display: none;
+}
+
+.wpcc-search-clear {
+	flex: none;
+	min-height: 26px;
+	min-width: 26px;
+	padding: 0;
+	font-size: 0.75rem;
+	border-radius: 999px;
+}
+
+.wpcc-search-count {
+	margin-bottom: 12px;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: var( --wpcc-muted );
+}
+
+.wpcc-search-list {
+	display: grid;
+	gap: 12px;
+}
+
+/* ── Filters ────────────────────────────────────────────────────────── */
+
+.wpcc-filters {
+	margin-bottom: var( --wpcc-gap );
+}
+
+.wpcc-filter-tip {
+	margin-bottom: 8px;
+	font-size: 0.75rem;
+	color: var( --wpcc-faint );
+}
+
+.wpcc-filter-tip:empty {
+	display: none;
+}
+
+.wpcc-pills {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.wpcc-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	min-height: 30px;
+	padding: 0 11px;
+	font: inherit;
+	font-size: 0.78rem;
+	font-weight: 600;
+	line-height: 1;
+	color: var( --wpcc-muted );
+	background: var( --wpcc-surface );
+	border: 1px solid var( --wpcc-border );
+	border-radius: 999px;
+	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.wpcc-pill:hover {
+	color: var( --wpcc-text );
+	border-color: var( --wpcc-cat, var( --wpcc-accent ) );
+}
+
+.wpcc-pill:focus-visible {
+	outline: 2px solid var( --wpcc-accent );
+	outline-offset: 1px;
+}
+
+.wpcc-pill.is-active {
+	color: #fff;
+	background: var( --wpcc-cat, var( --wpcc-accent ) );
+	border-color: var( --wpcc-cat, var( --wpcc-accent ) );
+}
+
+/* ── Body / states ──────────────────────────────────────────────────── */
+
+.wpcc-body {
+	min-height: 120px;
+}
+
+.wpcc-loading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 48px 0;
+}
+
+.wpcc-spinner {
+	display: block;
+	width: 26px;
+	height: 26px;
+	border: 2px solid var( --wpcc-border );
+	border-top-color: var( --wpcc-accent );
+	border-radius: 50%;
+	animation: wpcc-spin 0.8s linear infinite;
+}
+
+@keyframes wpcc-spin {
+	to {
+		transform: rotate( 360deg );
+	}
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.wpcc-spinner {
+		animation-duration: 2.4s;
+	}
+}
+
+.wpcc-empty {
+	padding: 32px 0;
+	text-align: center;
+	font-size: 0.9rem;
+	color: var( --wpcc-faint );
+}
+
+.wpcc-empty-small {
+	padding: 14px 12px;
+	font-size: 0.8rem;
+	color: var( --wpcc-faint );
+}
+
+/* ── Card view ──────────────────────────────────────────────────────── */
+
+.wpcc-group-section + .wpcc-group-section {
+	margin-top: 26px;
+}
+
+.wpcc-group-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.wpcc-group-head span {
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.09em;
+	text-transform: uppercase;
+	color: var( --wpcc-faint );
+	white-space: nowrap;
+}
+
+.wpcc-group-head i {
+	display: block;
+	flex: 1 1 auto;
+	height: 1px;
+	background: var( --wpcc-border );
+}
+
+.wpcc-card-grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( 280px, 1fr ) );
+	gap: 14px;
+}
+
+.wpcc-card {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	background: var( --wpcc-surface );
+	border: 1px solid var( --wpcc-border );
+	border-top: 3px solid var( --wpcc-cat, var( --wpcc-accent ) );
+	border-radius: var( --wpcc-radius );
+	box-shadow: var( --wpcc-shadow );
+}
+
+.wpcc-card-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 11px 13px;
+	border-bottom: 1px solid var( --wpcc-border-soft );
+}
+
+.wpcc-card-label {
+	flex: 1 1 auto;
+	min-width: 0;
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: var( --wpcc-text );
+}
+
+.wpcc-card-count {
+	flex: none;
+	min-width: 22px;
+	padding: 2px 7px;
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-align: center;
+	color: #fff;
+	background: var( --wpcc-cat, var( --wpcc-accent ) );
+	border-radius: 999px;
+}
+
+.wpcc-card-list {
+	flex: 1 1 auto;
+}
+
+.wpcc-card-list.is-scrollable {
+	max-height: 340px;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+}
+
+.wpcc-card-list.is-scrollable::-webkit-scrollbar {
+	width: 8px;
+}
+
+.wpcc-card-list.is-scrollable::-webkit-scrollbar-thumb {
+	background: var( --wpcc-border );
+	border-radius: 999px;
+}
+
+/* ── Event rows ─────────────────────────────────────────────────────── */
+
+.wpcc-row {
+	display: flex;
+	gap: 10px;
+	padding: 10px 13px;
+	cursor: pointer;
+	border-left: 3px solid transparent;
+	transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.wpcc-row + .wpcc-row {
+	border-top: 1px solid var( --wpcc-border-soft );
+}
+
+.wpcc-row:hover {
+	background: var( --wpcc-hover );
+	border-left-color: var( --wpcc-cat, var( --wpcc-accent ) );
+}
+
+.wpcc-row.is-past {
+	opacity: 0.55;
+}
+
+.wpcc-row.is-past:hover {
+	opacity: 0.85;
+}
+
+.wpcc-row-date {
+	flex: none;
+	width: 42px;
+	padding-top: 1px;
+	text-align: center;
+	line-height: 1.1;
+}
+
+.wpcc-row-dow {
+	display: block;
+	font-size: 0.6rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var( --wpcc-faint );
+}
+
+.wpcc-row-day {
+	display: block;
+	font-size: 1.2rem;
+	font-weight: 700;
+	color: var( --wpcc-cat, var( --wpcc-accent ) );
+}
+
+.wpcc-row-mon {
+	display: block;
+	font-size: 0.6rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var( --wpcc-faint );
+}
+
+.wpcc-row-info {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.wpcc-row-title {
+	font-size: 0.87rem;
+	font-weight: 600;
+	color: var( --wpcc-text );
+	overflow-wrap: anywhere;
+}
+
+.wpcc-today-badge {
+	display: inline-block;
+	margin-left: 4px;
+	padding: 1px 6px;
+	font-size: 0.6rem;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	vertical-align: 1px;
+	color: #fff;
+	background: var( --wpcc-highlight );
+	border-radius: 999px;
+}
+
+.wpcc-row-time,
+.wpcc-row-loc {
+	margin-top: 2px;
+	font-size: 0.76rem;
+	color: var( --wpcc-muted );
+	overflow-wrap: anywhere;
+}
+
+.wpcc-chip-dur {
+	display: inline-block;
+	margin-left: 4px;
+	padding: 0 5px;
+	font-size: 0.65rem;
+	font-weight: 600;
+	color: var( --wpcc-muted );
+	background: var( --wpcc-surface-2 );
+	border: 1px solid var( --wpcc-border-soft );
+	border-radius: 4px;
+}
+
+.wpcc-divider {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 13px;
+	background: var( --wpcc-surface-2 );
+	border-top: 1px solid var( --wpcc-border-soft );
+	border-bottom: 1px solid var( --wpcc-border-soft );
+}
+
+.wpcc-divider span {
+	font-size: 0.62rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var( --wpcc-faint );
+	white-space: nowrap;
+}
+
+.wpcc-divider i {
+	display: block;
+	flex: 1 1 auto;
+	height: 1px;
+	background: var( --wpcc-border );
+}
+
+/* ── Calendar grid ──────────────────────────────────────────────────── */
+
+.wpcc-grid-frame {
+	overflow: hidden;
+	background: var( --wpcc-surface );
+	border: 1px solid var( --wpcc-border );
+	border-radius: var( --wpcc-radius );
+	box-shadow: var( --wpcc-shadow );
+}
+
+.wpcc-grid-title {
+	padding: 12px 14px;
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: var( --wpcc-text );
+	border-bottom: 1px solid var( --wpcc-border-soft );
+}
+
+.wpcc-grid {
+	display: block;
+}
+
+.wpcc-dow-row,
+.wpcc-week-row {
+	display: grid;
+	grid-template-columns: repeat( 7, minmax( 0, 1fr ) );
+}
+
+.wpcc-dow-row {
+	background: var( --wpcc-surface-2 );
+	border-bottom: 1px solid var( --wpcc-border );
+}
+
+.wpcc-dow {
+	padding: 7px 4px;
+	text-align: center;
+	line-height: 1.2;
+}
+
+.wpcc-dow + .wpcc-dow {
+	border-left: 1px solid var( --wpcc-border-soft );
+}
+
+.wpcc-dow.is-weekend {
+	color: var( --wpcc-faint );
+}
+
+.wpcc-dow-name {
+	display: block;
+	font-size: 0.62rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var( --wpcc-muted );
+}
+
+.wpcc-dow-num {
+	display: inline-block;
+	margin-top: 3px;
+	min-width: 21px;
+	padding: 1px 0;
+	font-size: 0.78rem;
+	font-weight: 700;
+	color: var( --wpcc-text );
+	border-radius: 999px;
+}
+
+.wpcc-dow-num.is-today {
+	color: #fff;
+	background: var( --wpcc-highlight );
+}
+
+.wpcc-week-row + .wpcc-week-row {
+	border-top: 1px solid var( --wpcc-border-soft );
+}
+
+.wpcc-day {
+	min-height: 96px;
+	padding: 5px;
+	background: var( --wpcc-surface );
+}
+
+.wpcc-day + .wpcc-day {
+	border-left: 1px solid var( --wpcc-border-soft );
+}
+
+.wpcc-day.is-out {
+	background: var( --wpcc-out-bg );
+}
+
+.wpcc-day.is-out .wpcc-day-num {
+	opacity: 0.4;
+}
+
+.wpcc-day-num {
+	margin-bottom: 3px;
+	font-size: 0.72rem;
+	font-weight: 700;
+	color: var( --wpcc-muted );
+	text-align: right;
+}
+
+.wpcc-day.is-today .wpcc-day-num span {
+	display: inline-block;
+	min-width: 19px;
+	padding: 1px 0;
+	text-align: center;
+	color: #fff;
+	background: var( --wpcc-highlight );
+	border-radius: 999px;
+}
+
+.wpcc-grid.is-week .wpcc-day {
+	min-height: 210px;
+}
+
+/* The week header already shows each date, so the cell number is redundant. */
+.wpcc-grid.is-week .wpcc-day-num {
+	display: none;
+}
+
+.wpcc-chips {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.wpcc-chip {
+	display: flex;
+	align-items: baseline;
+	gap: 3px;
+	padding: 2px 4px;
+	font-size: 0.7rem;
+	line-height: 1.25;
+	cursor: pointer;
+	border-radius: 4px;
+	border-left: 2px solid var( --wpcc-cat, var( --wpcc-accent ) );
+	/*
+	 * Blend toward the surface, not transparent: a pale category colour over a
+	 * dark surface would otherwise produce a light chip with light text on it.
+	 */
+	background: color-mix( in srgb, var( --wpcc-cat, #147671 ) 14%, var( --wpcc-surface ) );
+	transition: background 0.12s ease;
+}
+
+.wpcc-chip:hover {
+	background: color-mix( in srgb, var( --wpcc-cat, #147671 ) 30%, var( --wpcc-surface ) );
+}
+
+/* No color-mix (older Safari/Firefox): fall back to a plain surface chip. */
+@supports not ( background: color-mix( in srgb, red 10%, blue ) ) {
+	.wpcc-chip {
+		background: var( --wpcc-surface-2 );
+	}
+
+	.wpcc-chip:hover {
+		background: var( --wpcc-hover );
+	}
+}
+
+.wpcc-chip-dot {
+	flex: none;
+	font-size: 0.5rem;
+	color: var( --wpcc-cat, var( --wpcc-accent ) );
+}
+
+.wpcc-chip-text {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var( --wpcc-text );
+}
+
+.wpcc-chip-time {
+	margin-right: 3px;
+	font-weight: 700;
+	color: var( --wpcc-muted );
+}
+
+/* ── Popup ──────────────────────────────────────────────────────────── */
+
+/*
+ * The popup is appended to <body> so no theme wrapper or overflow rule can
+ * clip it, so it repeats the shared tokens the .wpcc-app block sets up.
+ */
+.wpcc-popup {
+	--wpcc-accent: #147671;
+	--wpcc-highlight: #cf2c28;
+	--wpcc-radius: 12px;
+	--wpcc-radius-sm: 8px;
+	--wpcc-shadow: 0 1px 2px rgba( 0, 0, 0, 0.06 ), 0 4px 16px rgba( 0, 0, 0, 0.05 );
+}
+
+.wpcc-popup *,
+.wpcc-popup *::before,
+.wpcc-popup *::after {
+	box-sizing: border-box;
+}
+
+.wpcc-popup a {
+	color: var( --wpcc-accent );
+	text-decoration: none;
+	overflow-wrap: anywhere;
+}
+
+.wpcc-popup a:hover,
+.wpcc-popup a:focus {
+	text-decoration: underline;
+}
+
+.wpcc-popup {
+	position: absolute;
+	z-index: 99999;
+	width: 320px;
+	max-width: calc( 100vw - 24px );
+	overflow: hidden;
+	font-size: 15px;
+	line-height: 1.5;
+	color: var( --wpcc-text );
+	background: var( --wpcc-surface );
+	border: 1px solid var( --wpcc-border );
+	border-radius: var( --wpcc-radius );
+	box-shadow: 0 8px 32px rgba( 0, 0, 0, 0.22 );
+}
+
+.wpcc-popup-bar {
+	height: 3px;
+	background: var( --wpcc-cat, var( --wpcc-accent ) );
+}
+
+.wpcc-popup-close {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	font: inherit;
+	font-size: 0.7rem;
+	line-height: 1;
+	color: var( --wpcc-muted );
+	background: var( --wpcc-surface-2 );
+	border: 1px solid var( --wpcc-border-soft );
+	border-radius: 999px;
+	cursor: pointer;
+}
+
+.wpcc-popup-close:hover {
+	color: var( --wpcc-text );
+	background: var( --wpcc-hover );
+}
+
+.wpcc-popup-head {
+	padding: 11px 40px 9px 13px;
+	border-bottom: 1px solid var( --wpcc-border-soft );
+}
+
+.wpcc-popup-cat {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.65rem;
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: var( --wpcc-cat, var( --wpcc-accent ) );
+}
+
+.wpcc-popup-title {
+	margin-top: 3px;
+	font-size: 0.95rem;
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+
+.wpcc-popup-body {
+	padding: 11px 13px 13px;
+	max-height: 60vh;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+
+.wpcc-popup-row {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 8px;
+	font-size: 0.8rem;
+}
+
+.wpcc-popup-ico {
+	flex: none;
+	width: 16px;
+	font-size: 0.75rem;
+	text-align: center;
+	opacity: 0.8;
+}
+
+.wpcc-popup-date {
+	font-weight: 700;
+	color: var( --wpcc-text );
+}
+
+.wpcc-popup-time,
+.wpcc-popup-muted {
+	color: var( --wpcc-muted );
+	overflow-wrap: anywhere;
+}
+
+.wpcc-popup-desc {
+	color: var( --wpcc-muted );
+	overflow-wrap: anywhere;
+}
+
+.wpcc-popup-desc br {
+	content: '';
+}
+
+.wpcc-popup-sep {
+	height: 1px;
+	margin: 10px 0;
+	background: var( --wpcc-border-soft );
+}
+
+.wpcc-popup-link {
+	display: block;
+	padding: 4px 0;
+	font-size: 0.78rem;
+	font-weight: 600;
+}
+
+/* ── Search result detail cards ─────────────────────────────────────── */
+
+.wpcc-detail {
+	padding: 12px 14px;
+	background: var( --wpcc-surface );
+	border: 1px solid var( --wpcc-border );
+	border-left: 3px solid var( --wpcc-cat, var( --wpcc-accent ) );
+	border-radius: var( --wpcc-radius-sm );
+	box-shadow: var( --wpcc-shadow );
+}
+
+.wpcc-detail-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.wpcc-detail-cat {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.65rem;
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: var( --wpcc-cat, var( --wpcc-accent ) );
+}
+
+.wpcc-detail-when {
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: var( --wpcc-muted );
+}
+
+.wpcc-detail-title {
+	margin-top: 4px;
+	font-size: 0.95rem;
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+
+.wpcc-detail-loc,
+.wpcc-detail-desc {
+	margin-top: 4px;
+	font-size: 0.8rem;
+	color: var( --wpcc-muted );
+	overflow-wrap: anywhere;
+}
+
+.wpcc-detail-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 14px;
+	margin-top: 9px;
+	padding-top: 8px;
+	font-size: 0.78rem;
+	font-weight: 600;
+	border-top: 1px solid var( --wpcc-border-soft );
+}
+
+/* ── Small screens ──────────────────────────────────────────────────── */
+
+@media ( max-width: 782px ) {
+	.wpcc-app {
+		padding: 14px;
+	}
+
+	.wpcc-controls {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.wpcc-card-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.wpcc-day {
+		min-height: 74px;
+		padding: 3px;
+	}
+
+	.wpcc-chip-text {
+		font-size: 0.65rem;
+	}
+}
+
+@media ( max-width: 480px ) {
+	.wpcc-bar {
+		width: 100%;
+	}
+
+	.wpcc-submit {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.wpcc-chip-dot {
+		display: none;
+	}
+}
+
+/* ── Print ──────────────────────────────────────────────────────────── */
+
+@media print {
+	.wpcc-controls,
+	.wpcc-search,
+	.wpcc-filters,
+	.wpcc-popup {
+		display: none !important;
+	}
+
+	.wpcc-app {
+		background: #fff;
+		color: #000;
+	}
+
+	.wpcc-card-list.is-scrollable {
+		max-height: none;
+		overflow: visible;
+	}
+}

@@ -1,0 +1,194 @@
+/**
+ * WPCalendarCats — admin screens.
+ *
+ * Deliberately thin: it leans on core WordPress admin styles and only adds
+ * what the category editor and the feed help boxes need.
+ */
+
+.wpcc-admin .description code {
+	font-size: 12px;
+}
+
+.wpcc-code-sample {
+	margin: 6px 0 0;
+	padding: 8px 10px;
+	font-size: 12px;
+	line-height: 1.6;
+	white-space: pre-wrap;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	overflow-x: auto;
+}
+
+.wpcc-feed-list {
+	margin: 6px 0 0;
+	padding: 0;
+	list-style: none;
+	font-size: 12px;
+}
+
+.wpcc-feed-list li {
+	margin: 0 0 3px;
+	padding-left: 14px;
+	position: relative;
+	color: #50575e;
+	overflow-wrap: anywhere;
+}
+
+.wpcc-feed-list li::before {
+	content: '•';
+	position: absolute;
+	left: 2px;
+	color: #2271b1;
+}
+
+.wpcc-warning {
+	color: #8a1f11;
+	font-weight: 600;
+}
+
+.wpcc-attr-table {
+	max-width: 900px;
+	margin-top: 8px;
+}
+
+.wpcc-attr-table code {
+	white-space: nowrap;
+}
+
+.wpcc-attr-table td {
+	vertical-align: top;
+}
+
+/* ── Category rows ──────────────────────────────────────────────────── */
+
+#wpcc-cat-rows {
+	max-width: 900px;
+	margin-top: 14px;
+}
+
+.wpcc-cat-row {
+	margin-bottom: 6px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 5px;
+}
+
+.wpcc-cat-row.is-open {
+	border-color: #2271b1;
+	box-shadow: 0 1px 4px rgba( 0, 0, 0, 0.08 );
+}
+
+.wpcc-cat-head {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	padding: 9px 12px;
+	cursor: default;
+}
+
+.wpcc-cat-handle {
+	flex: none;
+	font-size: 13px;
+	line-height: 1;
+	color: #a7aaad;
+	cursor: grab;
+	user-select: none;
+}
+
+.wpcc-cat-swatch {
+	flex: none;
+	width: 15px;
+	height: 15px;
+	border: 1px solid rgba( 0, 0, 0, 0.15 );
+	border-radius: 4px;
+}
+
+.wpcc-cat-title {
+	flex: 1 1 auto;
+	min-width: 0;
+	font-size: 13px;
+	overflow-wrap: anywhere;
+}
+
+.wpcc-cat-badge {
+	flex: none;
+	padding: 1px 8px;
+	font-size: 11px;
+	color: #50575e;
+	background: #f0f0f1;
+	border-radius: 999px;
+	white-space: nowrap;
+}
+
+.wpcc-cat-actions {
+	flex: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.wpcc-cat-actions .button-link {
+	font-size: 13px;
+	line-height: 1;
+	text-decoration: none;
+}
+
+.wpcc-cat-actions .wpcc-remove {
+	color: #b32d2e;
+}
+
+.wpcc-cat-actions .wpcc-toggle {
+	font-weight: 600;
+}
+
+.wpcc-cat-body {
+	padding: 4px 12px 14px;
+	border-top: 1px solid #f0f0f1;
+}
+
+.wpcc-field-grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fit, minmax( 170px, 1fr ) );
+	gap: 12px;
+	margin: 12px 0;
+}
+
+.wpcc-field-grid label,
+.wpcc-keywords-label {
+	display: block;
+	font-size: 12px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.wpcc-field-grid input[type='text'] {
+	display: block;
+	width: 100%;
+	margin-top: 3px;
+}
+
+.wpcc-field-grid .description {
+	display: block;
+	margin-top: 2px;
+	font-size: 11px;
+	font-weight: 400;
+	font-style: normal;
+}
+
+.wpcc-keywords-label textarea {
+	margin-top: 4px;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+@media ( max-width: 600px ) {
+	.wpcc-cat-head {
+		flex-wrap: wrap;
+	}
+
+	.wpcc-cat-badge {
+		order: 3;
+	}
+}
