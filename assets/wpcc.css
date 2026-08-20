@@ -497,7 +497,7 @@
 }
 
 .wpcc-card-list.is-scrollable {
-	max-height: 340px;
+	max-height: 272px;
 	overflow-y: auto;
 	overscroll-behavior: contain;
 	scrollbar-width: thin;

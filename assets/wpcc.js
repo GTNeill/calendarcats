@@ -10,7 +10,10 @@
 	'use strict';
 
 	var DOW = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
-	var MAX_VISIBLE_ROWS = 5;
+	// Cards are sized for this many event rows; 5 or more events scroll.
+	// If changed, update .wpcc-card-list.is-scrollable max-height in wpcc.css
+	// (one row is ~68px).
+	var MAX_VISIBLE_ROWS = 4;
 
 	/* ── Date helpers ──────────────────────────────────────────────────
 	 * Event times arrive as naive wall-clock strings in the site's
@@ -550,6 +553,68 @@
 			}
 
 			window.scrollTo( window.scrollX, scrollY );
+			sizeCardLists();
+		}
+
+		/**
+		 * Size every card body to exactly MAX_VISIBLE_ROWS rows.
+		 *
+		 * Row heights vary (a long title wraps, a location line may be absent,
+		 * the "Earlier this period" divider adds its own height), so the fixed
+		 * max-height in the stylesheet is only a pre-layout fallback. Here we
+		 * measure the first MAX_VISIBLE_ROWS children and cap the list there, so
+		 * a card with four events shows all four and a card with five or more
+		 * scrolls. Cards in the same grid row then stay the same height.
+		 */
+		function sizeCardLists() {
+			var lists = root.querySelectorAll( '.wpcc-card-list' );
+
+			for ( var i = 0; i < lists.length; i++ ) {
+				var list = lists[ i ];
+				var kids = list.children;
+				list.style.maxHeight = '';
+
+				// Walk the children until MAX_VISIBLE_ROWS event rows are covered.
+				// Non-row children (the "Earlier this period" divider) count
+				// towards the height but not the row budget.
+				var seen = 0;
+				var covered = 0;
+				var last = null;
+
+				for ( var j = 0; j < kids.length; j++ ) {
+					var kid = kids[ j ];
+					var isRow = kid.classList.contains( 'wpcc-row' );
+
+					if ( isRow && seen >= MAX_VISIBLE_ROWS ) {
+						break;
+					}
+
+					last = kid;
+					covered = j + 1;
+
+					if ( isRow ) {
+						seen++;
+					}
+				}
+
+				if ( ! last || covered >= kids.length ) {
+					list.classList.remove( 'is-scrollable' );
+					continue;
+				}
+
+				// Measure from the list's top edge to the last visible row's
+				// bottom edge rather than summing offsetHeight, so row margins
+				// are included. Rects are viewport-relative, so unscroll first.
+				var prevScroll = list.scrollTop;
+				list.scrollTop = 0;
+				var h = last.getBoundingClientRect().bottom -
+					list.getBoundingClientRect().top +
+					parseFloat( window.getComputedStyle( list ).paddingBottom );
+				list.scrollTop = prevScroll;
+
+				list.classList.add( 'is-scrollable' );
+				list.style.maxHeight = Math.ceil( h ) + 'px';
+			}
 		}
 
 		function button( label, title, className, onClick ) {
@@ -1163,7 +1228,11 @@
 			}
 		} );
 
-		window.addEventListener( 'resize', closePopup );
+		window.addEventListener( 'resize', function () {
+			closePopup();
+			// Column count and title wrapping change with width, so re-measure.
+			sizeCardLists();
+		} );
 
 		load();
 	}

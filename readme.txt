@@ -4,7 +4,7 @@ Tags: calendar, events, ical, ics, google calendar, community
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -108,6 +108,10 @@ Every class is prefixed `wpcc-`, and the palette runs through CSS custom propert
 Major rewrite: the plugin now renders the calendar itself instead of embedding an external app. Existing `[wpcalendarcats]` shortcodes keep working, and your old iframe URL is preserved — add `mode="iframe"` to any shortcode you want to keep as an embed.
 
 == Changelog ==
+
+= 2.0.1 =
+* Category cards are now sized for four events and scroll from the fifth onwards. Previously a card holding exactly five events stretched its whole grid row, making every neighbouring card too tall.
+* The visible height is measured from the rendered rows instead of assuming a fixed row height, so cards with wrapped titles or a location line no longer clip their last visible event. Card heights are re-measured on window resize.
 
 = 2.0.0 =
 * **Self-contained rewrite.** The plugin renders the calendar in PHP and vanilla JavaScript and reads public iCalendar feeds directly. No companion app, no configured app URL, no API key.
