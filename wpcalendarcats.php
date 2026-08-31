@@ -2,6 +2,7 @@
 /**
  * Plugin Name:       WPCalendarCats
  * Plugin URI:        https://github.com/GTNeill/wpcalendarcats
+ * Update URI:        https://github.com/GTNeill/wpcalendarcats
  * Description:       A self-contained community events calendar. Reads public iCalendar feeds directly, sorts events into keyword-driven categories, and renders them with a card view, a calendar grid, search and category filters — all via the [wpcalendarcats] shortcode. No external app or API key required.
  * Version:           2.1.0
  * Requires at least: 5.8
@@ -30,6 +31,7 @@ require_once WPCC_DIR . 'includes/class-wpcc-categories.php';
 require_once WPCC_DIR . 'includes/class-wpcc-ics.php';
 require_once WPCC_DIR . 'includes/class-wpcc-rest.php';
 require_once WPCC_DIR . 'includes/class-wpcc-shortcode.php';
+require_once WPCC_DIR . 'includes/class-wpcc-updater.php';
 
 if ( is_admin() ) {
 	require_once WPCC_DIR . 'includes/class-wpcc-admin.php';
@@ -43,6 +45,8 @@ function wpcc_bootstrap() {
 
 	WPCC_REST::init();
 	WPCC_Shortcode::init();
+	// Not gated behind is_admin(): update checks also run from wp-cron.
+	WPCC_Updater::init();
 
 	if ( is_admin() ) {
 		WPCC_Admin::init();

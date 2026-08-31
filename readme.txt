@@ -115,6 +115,8 @@ Major rewrite: the plugin now renders the calendar itself instead of embedding a
 * The zoom level survives a view switch, a filter change and a feed refresh, and card heights are re-measured after every change so the four-event cap stays correct at any zoom level.
 * The control is keyboard operable and screen-reader labelled. On screens narrower than 640px the slider is hidden and the −/+ buttons remain.
 * Added a "Content zoom control" setting and a `zoom="no"` shortcode attribute to hide it.
+* **Update notifications.** The plugin now tells WordPress where to look for new versions, so releases show up on the Plugins and Updates screens with a working Update button instead of having to be re-uploaded by hand. Updates are checked against the project's public GitHub releases at most twice a day, and nothing installs on its own — you still click Update.
+* Added a "Check for updates" link under the plugin on the Plugins screen, and wired up the "View details" popup so release notes are readable before updating.
 
 = 2.0.1 =
 * Category cards are now sized for four events and scroll from the fifth onwards. Previously a card holding exactly five events stretched its whole grid row, making every neighbouring card too tall.
