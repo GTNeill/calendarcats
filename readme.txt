@@ -4,7 +4,7 @@ Tags: calendar, events, ical, ics, google calendar, community
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.1.0
+Stable tag: 2.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -108,6 +108,14 @@ Every class is prefixed `wpcc-`, and the palette runs through CSS custom propert
 Major rewrite: the plugin now renders the calendar itself instead of embedding an external app. Existing `[wpcalendarcats]` shortcodes keep working, and your old iframe URL is preserved — add `mode="iframe"` to any shortcode you want to keep as an embed.
 
 == Changelog ==
+
+= 2.1.1 =
+* **Accessibility: fixed 505 WCAG failures found by an automated audit of a live page.** Every one was inside the calendar itself; the surrounding theme was clean.
+* Raised the muted and faint text colours in both themes. They were measured against plain white, but the calendar paints them on four different surfaces — on the darkest, "Updated just now" and the day-of-week labels were down at 2.3:1 against a required 4.5:1.
+* Event times inside calendar chips now use the full text colour. They previously used the muted colour on top of a category tint, which only reached ~3.6:1 — this alone accounted for 156 of the failures.
+* Out-of-month day numbers in the grid no longer fade to `opacity: 0.4`, which had pushed them to 1.6:1. They recede by colour instead and stay readable.
+* Category colours used as *text* are now contrast-corrected at render time against the surface behind them. Because categories are editable, a fixed palette cannot guarantee this — a red or blue category number on the dark theme was sitting at ~2.6:1. Borders and backgrounds keep the exact colour you chose.
+* Category cards that scroll are now reachable by keyboard and announced by screen readers. Previously the events past the fourth in a card could not be reached without a mouse.
 
 = 2.1.0 =
 * Restored the content zoom control that was lost in the 2.0.0 rewrite. It now lives inline in the calendar toolbar as `[−] [slider] [+] [100%]` rather than floating against the viewport edge, so it never overlays your theme's content or follows visitors down the page.

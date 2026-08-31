@@ -23,6 +23,100 @@
 	var ZOOM_STEP = 5;
 	var ZOOM_DEFAULT = 100;
 
+	/* ── Contrast helpers ───────────────────────────────────────────────
+	 * Category colours are admin-editable data, not design tokens, so no
+	 * fixed palette can guarantee they are legible when painted as text.
+	 * Anything that uses a category colour as *text* gets a corrected
+	 * variant computed against the surface it actually sits on; borders and
+	 * backgrounds keep the raw colour.
+	 *
+	 * The surface each theme paints behind that text.
+	 */
+	var SURFACE = {
+		light: '#ffffff',
+		dark: '#0d3340'
+	};
+
+	function hexToRgb( hex ) {
+		if ( 'string' !== typeof hex ) {
+			return null;
+		}
+		var h = hex.replace( '#', '' ).trim();
+		if ( 3 === h.length ) {
+			h = h.charAt( 0 ) + h.charAt( 0 ) + h.charAt( 1 ) + h.charAt( 1 ) + h.charAt( 2 ) + h.charAt( 2 );
+		}
+		if ( ! /^[0-9a-fA-F]{6}$/.test( h ) ) {
+			return null;
+		}
+		return [
+			parseInt( h.slice( 0, 2 ), 16 ),
+			parseInt( h.slice( 2, 4 ), 16 ),
+			parseInt( h.slice( 4, 6 ), 16 )
+		];
+	}
+
+	/** WCAG relative luminance. */
+	function luminance( rgb ) {
+		var out = [];
+		for ( var i = 0; i < 3; i++ ) {
+			var c = rgb[ i ] / 255;
+			out.push( c <= 0.03928 ? c / 12.92 : Math.pow( ( c + 0.055 ) / 1.055, 2.4 ) );
+		}
+		return 0.2126 * out[ 0 ] + 0.7152 * out[ 1 ] + 0.0722 * out[ 2 ];
+	}
+
+	function contrast( a, b ) {
+		var la = luminance( a );
+		var lb = luminance( b );
+		return ( Math.max( la, lb ) + 0.05 ) / ( Math.min( la, lb ) + 0.05 );
+	}
+
+	function toHex( rgb ) {
+		var s = '#';
+		for ( var i = 0; i < 3; i++ ) {
+			var v = Math.max( 0, Math.min( 255, Math.round( rgb[ i ] ) ) ).toString( 16 );
+			s += 1 === v.length ? '0' + v : v;
+		}
+		return s;
+	}
+
+	/**
+	 * Walk a colour toward black or white until it clears `target` on `bg`.
+	 *
+	 * @param {string} color  Candidate colour, hex.
+	 * @param {string} bg     Background it will sit on, hex.
+	 * @param {number} target Required contrast ratio.
+	 * @return {string} The original colour when it already passes.
+	 */
+	function readableOn( color, bg, target ) {
+		var rgb = hexToRgb( color );
+		var bgRgb = hexToRgb( bg );
+
+		if ( ! rgb || ! bgRgb ) {
+			return color;
+		}
+		if ( contrast( rgb, bgRgb ) >= target ) {
+			return color;
+		}
+
+		// Light surface: darken. Dark surface: lighten.
+		var toward = luminance( bgRgb ) > 0.4 ? 0 : 255;
+
+		for ( var i = 1; i <= 40; i++ ) {
+			var k = i / 40;
+			var mix = [
+				rgb[ 0 ] + ( toward - rgb[ 0 ] ) * k,
+				rgb[ 1 ] + ( toward - rgb[ 1 ] ) * k,
+				rgb[ 2 ] + ( toward - rgb[ 2 ] ) * k
+			];
+			if ( contrast( mix, bgRgb ) >= target ) {
+				return toHex( mix );
+			}
+		}
+
+		return 0 === toward ? '#000000' : '#ffffff';
+	}
+
 	/* ── Date helpers ──────────────────────────────────────────────────
 	 * Event times arrive as naive wall-clock strings in the site's
 	 * timezone ("2026-08-05T19:00:00"). They're parsed as-is so every
@@ -314,6 +408,27 @@
 		root.style.setProperty( '--wpcc-accent', config.accent || '#147671' );
 		root.style.setProperty( '--wpcc-highlight', config.highlight || '#CF2C28' );
 
+		/**
+		 * Apply a category colour to a node.
+		 *
+		 * --wpcc-cat keeps the raw value for borders and backgrounds.
+		 * --wpcc-cat-text carries a contrast-corrected variant for the places
+		 * the colour is painted as text, which is the only part WCAG 1.4.3
+		 * governs. Recomputed on every render, so the theme toggle picks up
+		 * the new surface.
+		 *
+		 * @param {Element} node  Node to set the variables on.
+		 * @param {string}  color Category colour.
+		 */
+		function setCat( node, color ) {
+			var value = color || config.accent || '#147671';
+			node.style.setProperty( '--wpcc-cat', value );
+			node.style.setProperty(
+				'--wpcc-cat-text',
+				readableOn( value, SURFACE[ state.theme ] || SURFACE.light, 4.5 )
+			);
+		}
+
 		function isTouch() {
 			return window.matchMedia && window.matchMedia( '(hover: none)' ).matches;
 		}
@@ -401,7 +516,7 @@
 			// The popup lives on <body> (so no theme wrapper can clip it), which
 			// means it has to carry the theme class and accent vars itself.
 			var popup = el( 'div', 'wpcc-popup wpcc-theme-' + state.theme );
-			popup.style.setProperty( '--wpcc-cat', color );
+			setCat( popup, color );
 			popup.style.setProperty( '--wpcc-accent', config.accent || '#147671' );
 			popup.style.setProperty( '--wpcc-highlight', config.highlight || '#CF2C28' );
 
@@ -611,6 +726,7 @@
 
 				if ( ! last || covered >= kids.length ) {
 					list.classList.remove( 'is-scrollable' );
+					setScrollable( list, false );
 					continue;
 				}
 
@@ -625,8 +741,40 @@
 				list.scrollTop = prevScroll;
 
 				list.classList.add( 'is-scrollable' );
+				setScrollable( list, true );
 				list.style.maxHeight = Math.ceil( h ) + 'px';
 			}
+		}
+
+		/**
+		 * Make a capped card list reachable by keyboard.
+		 *
+		 * A div that scrolls but can't be focused is unreachable without a
+		 * mouse — the events past the fourth simply don't exist for a keyboard
+		 * user (WCAG 2.1.1). Only lists that actually overflow get a tab stop,
+		 * so we don't litter the tab order with stops that do nothing.
+		 *
+		 * @param {Element} list       The card list.
+		 * @param {boolean} scrollable Whether it currently overflows.
+		 */
+		function setScrollable( list, scrollable ) {
+			if ( ! scrollable ) {
+				list.removeAttribute( 'tabindex' );
+				list.removeAttribute( 'role' );
+				list.removeAttribute( 'aria-label' );
+				return;
+			}
+
+			list.setAttribute( 'tabindex', '0' );
+			list.setAttribute( 'role', 'group' );
+
+			var label = list.getAttribute( 'data-label' ) || '';
+			list.setAttribute(
+				'aria-label',
+				label ?
+					label + ' — ' + ( strings.scrollableList || 'scrollable event list' ) :
+					( strings.scrollableList || 'scrollable event list' )
+			);
 		}
 
 		function button( label, title, className, onClick ) {
@@ -905,7 +1053,7 @@
 				var active = ! allActive && state.selected.indexOf( cat.key ) !== -1;
 				var pill = el( 'button', 'wpcc-pill' + ( active ? ' is-active' : '' ), iconHtml( cat.icon, 13 ) + '<span>' + escapeHtml( cat.label ) + '</span>' );
 				pill.type = 'button';
-				pill.style.setProperty( '--wpcc-cat', cat.color );
+				setCat( pill, cat.color );
 				pill.addEventListener( 'click', function () {
 					if ( allActive ) {
 						// First pick solos that category.
@@ -1025,7 +1173,7 @@
 			} );
 
 			var card = el( 'div', 'wpcc-card' );
-			card.style.setProperty( '--wpcc-cat', cat.color );
+			setCat( card, cat.color );
 
 			card.appendChild( el( 'div', 'wpcc-card-head',
 				iconHtml( cat.icon, 20 ) +
@@ -1034,6 +1182,9 @@
 			) );
 
 			var list = el( 'div', 'wpcc-card-list' );
+			// Kept for the accessible name sizeCardLists() applies when this
+			// list turns out to actually scroll.
+			list.setAttribute( 'data-label', cat.label );
 			if ( future.length > MAX_VISIBLE_ROWS || past.length ) {
 				list.classList.add( 'is-scrollable' );
 			}
@@ -1064,7 +1215,7 @@
 			var dur = fmtDuration( ev.start, ev.end, ev.isAllDay );
 
 			var row = el( 'div', 'wpcc-row' );
-			row.style.setProperty( '--wpcc-cat', color );
+			setCat( row, color );
 
 			var html = '<div class="wpcc-row-date">' +
 					'<span class="wpcc-row-dow">' + escapeHtml( fmt( start, { weekday: 'short' }, locale ) ) + '</span>' +
@@ -1216,7 +1367,7 @@
 
 		function eventChip( ev ) {
 			var chip = el( 'div', 'wpcc-chip' );
-			chip.style.setProperty( '--wpcc-cat', ev.categoryColor );
+			setCat( chip, ev.categoryColor );
 
 			var time = '';
 			if ( ! ev.isAllDay ) {
@@ -1270,7 +1421,7 @@
 		function detailCard( ev ) {
 			var start = parseLocal( ev.start );
 			var card = el( 'div', 'wpcc-detail' );
-			card.style.setProperty( '--wpcc-cat', ev.categoryColor );
+			setCat( card, ev.categoryColor );
 
 			var html = '<div class="wpcc-detail-head">' +
 					'<span class="wpcc-detail-cat">' + iconHtml( ev.categoryIcon, 13 ) + ' ' + escapeHtml( ev.categoryLabel ) + '</span>' +

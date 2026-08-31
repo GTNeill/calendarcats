@@ -40,8 +40,13 @@
 	--wpcc-border: #c8dde1;
 	--wpcc-border-soft: #e4eef0;
 	--wpcc-text: #0b3e4a;
-	--wpcc-muted: #5b7c86;
-	--wpcc-faint: #8aa5ad;
+	/*
+	 * Muted and faint are darkened to clear WCAG 1.4.3 (4.5:1) against the
+	 * *darkest* surface they land on, --wpcc-out-bg, not just white. The old
+	 * values measured 4.49 and 2.52 on plain white and failed everywhere.
+	 */
+	--wpcc-muted: #53717a;
+	--wpcc-faint: #5c6f74;
 	--wpcc-out-bg: #f4f0e9;
 	--wpcc-hover: #f2f8f9;
 }
@@ -54,7 +59,8 @@
 	--wpcc-border-soft: #163d49;
 	--wpcc-text: #fffbf4;
 	--wpcc-muted: #8ab8c0;
-	--wpcc-faint: #5f8d97;
+	/* Was #5f8d97 — only 3.33:1 on --wpcc-surface-2. */
+	--wpcc-faint: #82a6ae;
 	--wpcc-out-bg: #0a242c;
 	--wpcc-hover: #12404f;
 	--wpcc-shadow: 0 1px 2px rgba( 0, 0, 0, 0.4 ), 0 6px 20px rgba( 0, 0, 0, 0.35 );
@@ -605,7 +611,7 @@
 	display: block;
 	font-size: 1.2rem;
 	font-weight: 700;
-	color: var( --wpcc-cat, var( --wpcc-accent ) );
+	color: var( --wpcc-cat-text, var( --wpcc-cat, var( --wpcc-accent ) ) );
 }
 
 .wpcc-row-mon {
@@ -780,7 +786,11 @@
 }
 
 .wpcc-day.is-out .wpcc-day-num {
-	opacity: 0.4;
+	/*
+	 * Was opacity: 0.4, which dropped these numbers to 1.6:1. Out-of-month
+	 * days still need to be readable, so recede with colour alone.
+	 */
+	color: var( --wpcc-muted );
 }
 
 .wpcc-day-num {
@@ -852,7 +862,7 @@
 .wpcc-chip-dot {
 	flex: none;
 	font-size: 0.5rem;
-	color: var( --wpcc-cat, var( --wpcc-accent ) );
+	color: var( --wpcc-cat-text, var( --wpcc-cat, var( --wpcc-accent ) ) );
 }
 
 .wpcc-chip-text {
@@ -866,7 +876,12 @@
 .wpcc-chip-time {
 	margin-right: 3px;
 	font-weight: 700;
-	color: var( --wpcc-muted );
+	/*
+	 * Full text colour, not --wpcc-muted: this sits on the category tint, and
+	 * muted only cleared ~3.6:1 there. The tint is a 14% blend toward the
+	 * surface, so it always stays close to it and --wpcc-text is safe.
+	 */
+	color: var( --wpcc-text );
 }
 
 /* ── Popup ──────────────────────────────────────────────────────────── */
@@ -955,7 +970,7 @@
 	font-weight: 700;
 	letter-spacing: 0.07em;
 	text-transform: uppercase;
-	color: var( --wpcc-cat, var( --wpcc-accent ) );
+	color: var( --wpcc-cat-text, var( --wpcc-cat, var( --wpcc-accent ) ) );
 }
 
 .wpcc-popup-title {
@@ -1047,7 +1062,7 @@
 	font-weight: 700;
 	letter-spacing: 0.07em;
 	text-transform: uppercase;
-	color: var( --wpcc-cat, var( --wpcc-accent ) );
+	color: var( --wpcc-cat-text, var( --wpcc-cat, var( --wpcc-accent ) ) );
 }
 
 .wpcc-detail-when {
