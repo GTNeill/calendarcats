@@ -193,6 +193,50 @@
 	font-size: 1rem;
 }
 
+/* ── Content zoom ──────────────────────────────────────────────────────
+ * Inline in the toolbar rather than floated against the viewport, so it
+ * can't overlap the host theme's content. */
+.wpcc-zoom {
+	align-items: center;
+	padding: 0 4px;
+}
+
+.wpcc-zoom-slider {
+	width: 92px;
+	height: 34px;
+	margin: 0 2px;
+	padding: 0;
+	background: transparent;
+	border: 0;
+	accent-color: var( --wpcc-accent );
+	cursor: pointer;
+	/* WP themes love to restyle bare inputs; keep this one predictable. */
+	box-shadow: none;
+	min-height: 0;
+}
+
+.wpcc-zoom-slider:focus-visible {
+	outline: 3px solid var( --wpcc-accent );
+	outline-offset: 2px;
+}
+
+.wpcc-zoom-value {
+	min-width: 46px;
+	padding: 0 8px;
+	font-size: 0.72rem;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.02em;
+}
+
+@media ( max-width: 640px ) {
+	/* The slider is the first thing worth dropping on a phone; the −/+
+	   buttons still give full control. */
+	.wpcc-zoom-slider {
+		display: none;
+	}
+}
+
 .wpcc-submit {
 	display: inline-flex;
 	align-items: center;

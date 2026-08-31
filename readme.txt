@@ -4,7 +4,7 @@ Tags: calendar, events, ical, ics, google calendar, community
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.0.1
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -108,6 +108,13 @@ Every class is prefixed `wpcc-`, and the palette runs through CSS custom propert
 Major rewrite: the plugin now renders the calendar itself instead of embedding an external app. Existing `[wpcalendarcats]` shortcodes keep working, and your old iframe URL is preserved — add `mode="iframe"` to any shortcode you want to keep as an embed.
 
 == Changelog ==
+
+= 2.1.0 =
+* Restored the content zoom control that was lost in the 2.0.0 rewrite. It now lives inline in the calendar toolbar as `[−] [slider] [+] [100%]` rather than floating against the viewport edge, so it never overlays your theme's content or follows visitors down the page.
+* Zoom runs from 75% to 150% in 5% steps and scales only the calendar body, leaving the toolbar itself at a fixed size. Clicking the percentage resets to 100%.
+* The zoom level survives a view switch, a filter change and a feed refresh, and card heights are re-measured after every change so the four-event cap stays correct at any zoom level.
+* The control is keyboard operable and screen-reader labelled. On screens narrower than 640px the slider is hidden and the −/+ buttons remain.
+* Added a "Content zoom control" setting and a `zoom="no"` shortcode attribute to hide it.
 
 = 2.0.1 =
 * Category cards are now sized for four events and scroll from the fifth onwards. Previously a card holding exactly five events stretched its whole grid row, making every neighbouring card too tall.

@@ -15,6 +15,14 @@
 	// (one row is ~68px).
 	var MAX_VISIBLE_ROWS = 4;
 
+	// Content zoom, matching the hosted calendar's slider. Applied as CSS
+	// zoom on the results body only, so the toolbar itself stays put and the
+	// control never scales itself out from under the pointer.
+	var ZOOM_MIN = 75;
+	var ZOOM_MAX = 150;
+	var ZOOM_STEP = 5;
+	var ZOOM_DEFAULT = 100;
+
 	/* ── Date helpers ──────────────────────────────────────────────────
 	 * Event times arrive as naive wall-clock strings in the site's
 	 * timezone ("2026-08-05T19:00:00"). They're parsed as-is so every
@@ -289,6 +297,7 @@
 			unit: config.unit || 'month',
 			offset: 0,
 			theme: config.theme || 'light',
+			zoom: ZOOM_DEFAULT,
 			search: '',
 			selected: [],
 			loading: true,
@@ -541,6 +550,9 @@
 
 			var body = el( 'div', 'wpcc-body' );
 			root.appendChild( body );
+			// render() rebuilds the DOM, so the current zoom has to be
+			// re-applied to the fresh body node or it resets on every reload.
+			applyZoom();
 
 			if ( state.loading ) {
 				body.appendChild( el( 'div', 'wpcc-loading', '<span class="wpcc-spinner" aria-hidden="true"></span>' ) );
@@ -628,6 +640,81 @@
 			return b;
 		}
 
+		/**
+		 * Content zoom control.
+		 *
+		 * The hosted calendar floats a vertical slider against the viewport
+		 * edge. That can't work inside a WordPress page — a fixed-position
+		 * control would sit on top of the theme's own content and follow the
+		 * visitor around the whole page, not just the calendar. So the same
+		 * control lives inline in the toolbar here.
+		 */
+		function renderZoom() {
+			var group = el( 'div', 'wpcc-group wpcc-zoom' );
+			group.setAttribute( 'role', 'group' );
+			group.setAttribute( 'aria-label', strings.zoom || 'Content zoom' );
+
+			var label = el( 'button', 'wpcc-btn wpcc-zoom-value', state.zoom + '%' );
+			label.type = 'button';
+
+			var slider = document.createElement( 'input' );
+			slider.type = 'range';
+			slider.className = 'wpcc-zoom-slider';
+			slider.min = ZOOM_MIN;
+			slider.max = ZOOM_MAX;
+			slider.step = ZOOM_STEP;
+			slider.value = state.zoom;
+			slider.setAttribute( 'aria-label', strings.zoomLevel || 'Content text zoom level' );
+
+			function apply( value, syncSlider ) {
+				state.zoom = Math.max( ZOOM_MIN, Math.min( ZOOM_MAX, value ) );
+				if ( syncSlider ) {
+					slider.value = state.zoom;
+				}
+				slider.setAttribute( 'aria-valuetext', state.zoom + '%' );
+				label.textContent = state.zoom + '%';
+				label.setAttribute(
+					'aria-label',
+					( strings.zoomReset || 'Reset zoom to 100%' ) + ' (' + state.zoom + '%)'
+				);
+				applyZoom();
+				// Row heights change with zoom, so the four-row cap has to be
+				// re-measured or cards keep their old height.
+				sizeCardLists();
+			}
+
+			var out = button( '−', strings.zoomOut || 'Decrease text size', 'wpcc-icon-btn', function () {
+				apply( state.zoom - ZOOM_STEP, true );
+			} );
+			var into = button( '+', strings.zoomIn || 'Increase text size', 'wpcc-icon-btn', function () {
+				apply( state.zoom + ZOOM_STEP, true );
+			} );
+
+			slider.addEventListener( 'input', function () {
+				apply( parseInt( slider.value, 10 ) || ZOOM_DEFAULT, false );
+			} );
+			label.addEventListener( 'click', function () {
+				apply( ZOOM_DEFAULT, true );
+			} );
+
+			group.appendChild( out );
+			group.appendChild( slider );
+			group.appendChild( into );
+			group.appendChild( label );
+
+			apply( state.zoom, true );
+			return group;
+		}
+
+		/** Push the current zoom onto the results body only. */
+		function applyZoom() {
+			var body = root.querySelector( '.wpcc-body' );
+			if ( ! body ) {
+				return;
+			}
+			body.style.zoom = ZOOM_DEFAULT === state.zoom ? '' : state.zoom + '%';
+		}
+
 		function renderControls() {
 			var range = currentRange();
 			var wrap = el( 'div', 'wpcc-controls' );
@@ -685,6 +772,10 @@
 			bar.appendChild( button( '⟳', strings.refresh || 'Refresh', 'wpcc-icon-btn', function () {
 				load();
 			} ) );
+
+			if ( config.showZoom ) {
+				bar.appendChild( renderZoom() );
+			}
 
 			if ( config.showThemeToggle ) {
 				bar.appendChild( button(

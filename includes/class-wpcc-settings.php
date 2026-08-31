@@ -34,6 +34,7 @@ class WPCC_Settings {
 			'default_unit'     => 'month',
 			'default_theme'    => 'light',
 			'show_theme_toggle' => 1,
+			'show_zoom'        => 1,
 			'show_search'      => 1,
 			'show_controls'    => 1,
 			'submit_url'       => '',

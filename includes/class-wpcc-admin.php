@@ -104,6 +104,7 @@ class WPCC_Admin {
 		$clean['default_theme'] = in_array( isset( $input['default_theme'] ) ? $input['default_theme'] : '', array( 'light', 'dark' ), true ) ? $input['default_theme'] : 'light';
 
 		$clean['show_theme_toggle'] = empty( $input['show_theme_toggle'] ) ? 0 : 1;
+		$clean['show_zoom']         = empty( $input['show_zoom'] ) ? 0 : 1;
 		$clean['show_search']       = empty( $input['show_search'] ) ? 0 : 1;
 		$clean['show_controls']     = empty( $input['show_controls'] ) ? 0 : 1;
 
@@ -226,7 +227,8 @@ abc123@group.calendar.google.com | Ward Events</pre>
 						<td>
 							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_controls]" value="1" <?php checked( $settings['show_controls'], 1 ); ?> /> <?php esc_html_e( 'Navigation controls (week/month, back/today/forward, view switch)', 'wpcalendarcats' ); ?></label><br />
 							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_search]" value="1" <?php checked( $settings['show_search'], 1 ); ?> /> <?php esc_html_e( 'Search box', 'wpcalendarcats' ); ?></label><br />
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_theme_toggle]" value="1" <?php checked( $settings['show_theme_toggle'], 1 ); ?> /> <?php esc_html_e( 'Light/dark theme toggle', 'wpcalendarcats' ); ?></label>
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_theme_toggle]" value="1" <?php checked( $settings['show_theme_toggle'], 1 ); ?> /> <?php esc_html_e( 'Light/dark theme toggle', 'wpcalendarcats' ); ?></label><br />
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_zoom]" value="1" <?php checked( $settings['show_zoom'], 1 ); ?> /> <?php esc_html_e( 'Content zoom control (text size)', 'wpcalendarcats' ); ?></label>
 						</td>
 					</tr>
 					<tr>
