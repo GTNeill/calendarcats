@@ -391,6 +391,44 @@
 		return 'https://calendar.google.com/calendar/render?' + params.join( '&' );
 	}
 
+	/**
+	 * Inline SVG for the UI's own controls.
+	 *
+	 * These used to be text glyphs (‹ › ⟳ − + ☾ ☀ 🔍). Their contrast was
+	 * fine when measured by hand — 5.24 light, 6.2 dark — but a glyph is a
+	 * character, not a shape, so contrast checkers can only report it as
+	 * "unable to determine" and it stays on the report forever. An SVG has
+	 * no text node at all, so the rule no longer applies. It also renders
+	 * identically everywhere, which glyphs and emoji very much do not.
+	 *
+	 * aria-hidden because every one of these lives in a button that already
+	 * carries an aria-label.
+	 *
+	 * @param {string} name Icon name.
+	 * @return {string} SVG markup.
+	 */
+	function svgIcon( name ) {
+		var paths = {
+			prev: '<path d="M15 18l-6-6 6-6"/>',
+			next: '<path d="M9 18l6-6-6-6"/>',
+			refresh: '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
+			minus: '<path d="M5 12h14"/>',
+			plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
+			sun: '<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M19.1 4.9l-1.5 1.5M6.4 17.6l-1.5 1.5"/>',
+			moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+			search: '<circle cx="11" cy="11" r="7"/><path d="M20.5 20.5l-4.2-4.2"/>'
+		};
+
+		if ( ! paths[ name ] ) {
+			return '';
+		}
+
+		return '<svg class="wpcc-svg" viewBox="0 0 24 24" width="1em" height="1em" ' +
+			'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+			'stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+			paths[ name ] + '</svg>';
+	}
+
 	function iconHtml( icon, size ) {
 		if ( ! icon ) {
 			return '';
@@ -398,7 +436,11 @@
 		if ( /^(https?:\/\/|\/|data:image\/)/.test( String( icon ).trim() ) ) {
 			return '<img class="wpcc-icon-img" src="' + escapeHtml( icon ) + '" alt="" aria-hidden="true" style="width:' + size + 'px;height:' + size + 'px" />';
 		}
-		return '<span class="wpcc-icon" style="font-size:' + Math.round( size * 0.9 ) + 'px">' + escapeHtml( icon ) + '</span>';
+		// aria-hidden: the category label always sits right next to the icon,
+		// so announcing the emoji only adds noise ("classical building, Ward
+		// Office"). It also keeps contrast checkers off a glyph they can't
+		// measure.
+		return '<span class="wpcc-icon" aria-hidden="true" style="font-size:' + Math.round( size * 0.9 ) + 'px">' + escapeHtml( icon ) + '</span>';
 	}
 
 	function el( tag, className, html ) {
@@ -878,10 +920,10 @@
 				sizeCardLists();
 			}
 
-			var out = button( '−', strings.zoomOut || 'Decrease text size', 'wpcc-icon-btn', function () {
+			var out = button( svgIcon( 'minus' ), strings.zoomOut || 'Decrease text size', 'wpcc-icon-btn', function () {
 				apply( state.zoom - ZOOM_STEP, true );
 			} );
-			var into = button( '+', strings.zoomIn || 'Increase text size', 'wpcc-icon-btn', function () {
+			var into = button( svgIcon( 'plus' ), strings.zoomIn || 'Increase text size', 'wpcc-icon-btn', function () {
 				apply( state.zoom + ZOOM_STEP, true );
 			} );
 
@@ -937,7 +979,7 @@
 
 			// Navigation.
 			var nav = el( 'div', 'wpcc-group' );
-			nav.appendChild( button( '‹', strings.prev || 'Previous', 'wpcc-icon-btn', function () {
+			nav.appendChild( button( svgIcon( 'prev' ), strings.prev || 'Previous', 'wpcc-icon-btn', function () {
 				state.offset -= 1;
 				load();
 			} ) );
@@ -945,7 +987,7 @@
 				state.offset = 0;
 				load();
 			} ) );
-			nav.appendChild( button( '›', strings.next || 'Next', 'wpcc-icon-btn', function () {
+			nav.appendChild( button( svgIcon( 'next' ), strings.next || 'Next', 'wpcc-icon-btn', function () {
 				state.offset += 1;
 				load();
 			} ) );
@@ -964,7 +1006,7 @@
 			} );
 			bar.appendChild( viewGroup );
 
-			bar.appendChild( button( '⟳', strings.refresh || 'Refresh', 'wpcc-icon-btn', function () {
+			bar.appendChild( button( svgIcon( 'refresh' ), strings.refresh || 'Refresh', 'wpcc-icon-btn', function () {
 				load();
 			} ) );
 
@@ -974,7 +1016,7 @@
 
 			if ( config.showThemeToggle ) {
 				bar.appendChild( button(
-					'dark' === state.theme ? '☀' : '☾',
+					svgIcon( 'dark' === state.theme ? 'sun' : 'moon' ),
 					'dark' === state.theme ? ( strings.lightMode || 'Light mode' ) : ( strings.darkMode || 'Dark mode' ),
 					'wpcc-icon-btn',
 					function () {
@@ -1013,7 +1055,7 @@
 
 		function renderSearch() {
 			var wrap = el( 'div', 'wpcc-search' + ( state.search ? ' is-active' : '' ) );
-			wrap.innerHTML = '<span class="wpcc-search-ico" aria-hidden="true">🔍</span>';
+			wrap.innerHTML = '<span class="wpcc-search-ico" aria-hidden="true">' + svgIcon( 'search' ) + '</span>';
 
 			var input = el( 'input' );
 			input.type = 'search';

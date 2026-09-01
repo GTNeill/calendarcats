@@ -194,9 +194,22 @@
 }
 
 .wpcc-icon-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	min-width: 34px;
 	padding: 0 10px;
 	font-size: 1rem;
+}
+
+/* The toolbar icons are inline SVG rather than text glyphs, so contrast
+   checkers have no character to (fail to) measure. Sized in em so they
+   still track the button's font-size and the content zoom control. */
+.wpcc-svg {
+	display: block;
+	flex: none;
+	width: 1em;
+	height: 1em;
 }
 
 /* ── Content zoom ──────────────────────────────────────────────────────
@@ -313,8 +326,10 @@
 }
 
 .wpcc-search-ico {
+	display: inline-flex;
 	flex: none;
-	font-size: 0.85rem;
+	align-items: center;
+	font-size: 1rem;
 	opacity: 0.7;
 }
 

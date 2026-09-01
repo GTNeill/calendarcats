@@ -4,7 +4,7 @@ Tags: calendar, events, ical, ics, google calendar, community
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.1.2
+Stable tag: 2.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -108,6 +108,11 @@ Every class is prefixed `wpcc-`, and the palette runs through CSS custom propert
 Major rewrite: the plugin now renders the calendar itself instead of embedding an external app. Existing `[wpcalendarcats]` shortcodes keep working, and your old iframe URL is preserved — add `mode="iframe"` to any shortcode you want to keep as an embed.
 
 == Changelog ==
+
+= 2.1.3 =
+* **Accessibility: the toolbar icons are now inline SVG instead of text glyphs.** The back, forward, refresh, text-size and light/dark buttons used characters (‹ › ⟳ − + ☾ ☀), and the search box used an emoji magnifier. Their contrast was fine when measured directly — 5.24:1 in light mode, 6.2:1 in dark — but a character is not a shape, so contrast checkers can only report it as "unable to determine", and it stays on the report permanently. SVG icons have no text to measure, so the rule no longer applies. They also render identically on every platform, which glyphs and emoji do not.
+* Category emoji are now hidden from screen readers. The category name always sits right beside the icon, so announcing both turned "Ward Office" into "classical building, Ward Office".
+* No visual change is intended in this release. If an icon looks off in your theme, please report it.
 
 = 2.1.2 =
 * **Accessibility: cleared the two remaining issues reported by third-party scanners.** Both were introduced or missed by the 2.1.1 pass.
