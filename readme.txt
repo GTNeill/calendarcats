@@ -4,7 +4,7 @@ Tags: calendar, events, ical, ics, google calendar, community
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.1.1
+Stable tag: 2.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -108,6 +108,12 @@ Every class is prefixed `wpcc-`, and the palette runs through CSS custom propert
 Major rewrite: the plugin now renders the calendar itself instead of embedding an external app. Existing `[wpcalendarcats]` shortcodes keep working, and your old iframe URL is preserved — add `mode="iframe"` to any shortcode you want to keep as an embed.
 
 == Changelog ==
+
+= 2.1.2 =
+* **Accessibility: cleared the two remaining issues reported by third-party scanners.** Both were introduced or missed by the 2.1.1 pass.
+* The scrollable category lists carried `role="group"`. That reads correctly, but a focusable scroll container is only allowed to be `application`, `main` or `region`, so scanners flagged all ten of them. They are now `role="region"`, which keeps the accessible name and satisfies the rule.
+* The event count badge painted a hardcoded white number on the raw category colour. That measured 4.32:1 on the mid greens and 3.54:1 on the greys, against a required 4.5:1. The number now takes a foreground computed against whichever colour the badge is actually painted, so every category clears 4.5:1 — worst case is now 4.53:1. White is kept wherever it already passed, so the badges look unchanged for most categories.
+* Count badges now read as "5 events" instead of a bare "5" to screen readers.
 
 = 2.1.1 =
 * **Accessibility: fixed 505 WCAG failures found by an automated audit of a live page.** Every one was inside the calendar itself; the surrounding theme was clean.

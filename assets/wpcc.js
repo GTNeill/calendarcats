@@ -117,6 +117,45 @@
 		return 0 === toward ? '#000000' : '#ffffff';
 	}
 
+	/**
+	 * Pick a foreground to sit ON a known background.
+	 *
+	 * The inverse of readableOn(): here the background is the fixed thing (a
+	 * category colour) and the text has to adapt. White is preferred so the
+	 * badges keep their look, and where white is too weak the background
+	 * colour itself is darkened toward black, which keeps the badge on-brand
+	 * instead of dropping to a flat black. Pure black always clears 4.54:1
+	 * whenever white fails, so this cannot run out of room.
+	 *
+	 * @param {string} bg     Background colour, hex.
+	 * @param {number} target Required contrast ratio.
+	 * @return {string} Hex colour for the text.
+	 */
+	function inkOn( bg, target ) {
+		var bgRgb = hexToRgb( bg );
+
+		if ( ! bgRgb ) {
+			return '#ffffff';
+		}
+		if ( contrast( [ 255, 255, 255 ], bgRgb ) >= target ) {
+			return '#ffffff';
+		}
+
+		for ( var i = 1; i <= 40; i++ ) {
+			var k = i / 40;
+			var mix = [
+				bgRgb[ 0 ] * ( 1 - k ),
+				bgRgb[ 1 ] * ( 1 - k ),
+				bgRgb[ 2 ] * ( 1 - k )
+			];
+			if ( contrast( mix, bgRgb ) >= target ) {
+				return toHex( mix );
+			}
+		}
+
+		return '#000000';
+	}
+
 	/* ── Date helpers ──────────────────────────────────────────────────
 	 * Event times arrive as naive wall-clock strings in the site's
 	 * timezone ("2026-08-05T19:00:00"). They're parsed as-is so every
@@ -427,6 +466,10 @@
 				'--wpcc-cat-text',
 				readableOn( value, SURFACE[ state.theme ] || SURFACE.light, 4.5 )
 			);
+			// For the places the category colour is the *background* (the count
+			// badge), where a hardcoded white sat as low as 3.54 on the greens
+			// and greys.
+			node.style.setProperty( '--wpcc-cat-fg', inkOn( value, 4.5 ) );
 		}
 
 		function isTouch() {
@@ -766,7 +809,11 @@
 			}
 
 			list.setAttribute( 'tabindex', '0' );
-			list.setAttribute( 'role', 'group' );
+			// Must be application, main or region: those are the only roles
+			// accepted for a focusable scroll container. "group" reads fine
+			// but fails axe's focus-order-semantics rule, which the scanners
+			// enable even though axe ships it disabled by default.
+			list.setAttribute( 'role', 'region' );
 
 			var label = list.getAttribute( 'data-label' ) || '';
 			list.setAttribute(
@@ -1178,7 +1225,15 @@
 			card.appendChild( el( 'div', 'wpcc-card-head',
 				iconHtml( cat.icon, 20 ) +
 				'<span class="wpcc-card-label">' + escapeHtml( cat.label ) + '</span>' +
-				'<span class="wpcc-card-count">' + events.length + '</span>'
+				// The hidden word makes this read as "5 events" rather than a
+				// bare "5", and gives contrast checkers real text to measure
+				// instead of a single digit they report as indeterminate.
+				'<span class="wpcc-card-count">' + events.length +
+					'<span class="wpcc-sr-only"> ' + escapeHtml(
+						1 === events.length ?
+							( strings.eventSingular || 'event' ) :
+							( strings.eventPlural || 'events' )
+					) + '</span></span>'
 			) );
 
 			var list = el( 'div', 'wpcc-card-list' );

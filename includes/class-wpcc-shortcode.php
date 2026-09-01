@@ -206,6 +206,8 @@ class WPCC_Shortcode {
 			'zoomOut'       => __( 'Decrease text size', 'wpcalendarcats' ),
 			'zoomReset'     => __( 'Reset zoom to 100%', 'wpcalendarcats' ),
 			'scrollableList' => __( 'scrollable event list', 'wpcalendarcats' ),
+			'eventSingular' => __( 'event', 'wpcalendarcats' ),
+			'eventPlural'   => __( 'events', 'wpcalendarcats' ),
 			'darkMode'      => __( 'Dark mode', 'wpcalendarcats' ),
 			'searchPlaceholder' => __( 'Search events in this view…', 'wpcalendarcats' ),
 			'clearSearch'   => __( 'Clear search', 'wpcalendarcats' ),
