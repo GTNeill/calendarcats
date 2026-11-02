@@ -13,15 +13,19 @@ No companion app to host. No API key. No third-party service in the request path
 **Front end**
 
 - **Cards view** — a card per category listing its upcoming events, with earlier events in the period below a divider at reduced opacity.
-- **Calendar view** — month or week grid with colour-coded event chips.
+- **Calendar view** — month, week or single-day grid with colour-coded event chips. Multi-day events appear on every day they span, with a `▸ cont'd` chip after the first day.
+- **Today view** — one-day agenda (`unit="day"`) with previous / next day navigation.
 - **Popups** on hover (or tap) with time, duration, location, linkified description, organiser, a link to the source event, and "Add to my calendar".
 - **Search** over titles, locations, descriptions and category labels in the current range.
 - **Filter pills** — first pick solos a category; selecting all reverts to "All".
+- **Remember my filter** — opt-in checkbox beside the pills; stores the selected categories in a first-party cookie (`cc_category_filter`, opt-in marker `cc_remember_filter`, 365 days). Off by default.
+- **About popup** — accessible modal listing every source with a "Visit site" link, plus an optional contact email.
 - **Light/dark themes** with an optional toggle.
 
 **Admin** (`Calendar Cats` in the menu)
 
 - **Feeds** — one per line: a full `.ics` URL or a bare Google Calendar id, optionally suffixed `| Display Name`. `#` starts a comment.
+- **More sources** — Squarespace event pages, Wild Apricot events RSS, and a built-in 2026 Chicago 60625 farmers-market schedule (see [Sources](#sources)).
 - **Categories** — add, remove, reorder, recolour, change icons and groups, edit keyword lists, import/export JSON, restore shipped defaults.
 - **Appearance** — accent and highlight colours, default view/unit/theme, toolbar and search visibility.
 - **Cache** — feed cache duration (1–1440 minutes) and a manual flush.
@@ -40,11 +44,14 @@ To install from source instead, copy the repository into `wp-content/plugins/wpc
 | Attribute | Values | Notes |
 | --- | --- | --- |
 | `view` | `cards`, `calendar` | Defaults to the admin setting |
-| `unit` | `month`, `week` | Defaults to the admin setting |
+| `unit` | `month`, `week`, `day` | Defaults to the admin setting |
 | `theme` | `light`, `dark` | Defaults to the admin setting |
 | `search` | `yes`, `no` | |
 | `controls` | `yes`, `no` | `no` hides the entire toolbar |
 | `theme_toggle` | `yes`, `no` | |
+| `zoom` | `yes`, `no` | |
+| `remember` | `yes`, `no` | "Remember my filter" checkbox |
+| `about` | `yes`, `no` | About button and popup |
 | `categories` | `key,key` | Restrict to specific category keys |
 | `max_width` | pixels | Centres the calendar within that width |
 | `submit_url` | URL | Renders a "Submit Your Event" button |
@@ -57,9 +64,24 @@ Examples:
 
 ```
 [wpcalendarcats view="calendar" unit="week" theme="dark"]
+[wpcalendarcats view="calendar" unit="day" about="yes" remember="yes"]
 [wpcalendarcats categories="public_safety,ward_office" controls="no" search="no"]
 [wpcalendarcats max_width="1100" submit_url="https://example.com/submit-event"]
 ```
+
+## Sources
+
+Besides plain `.ics` feeds, **Calendar Cats → Feeds** takes:
+
+- **Squarespace events** — `Events page URL | Display Name | About-page link`, one per line, for organisations that publish no `.ics`.
+- **Events RSS** — same syntax, for Wild Apricot sites that offer only an RSS feed. RSS events carry a **start time only**: no end time, no location.
+- **Farmers markets** — a checkbox for the published 2026 Chicago 60625 season (Lincoln Square, Ravenswood, North Park). The schedule is hard-coded in `class-wpcc-connectors.php` and **needs updating each year**.
+
+When two sources list the same event, `WPCC_Dedupe` merges them: the richer record wins, higher-priority feeds break ties, and the other publisher is shown as "Also listed by".
+
+## Analytics
+
+No analytics are bundled or injected. To add one (GoatCounter, Plausible, …), use your theme or a header/footer snippet plugin. The About popup's privacy note describes only what this plugin itself does.
 
 ## How categorisation works
 
@@ -126,6 +148,8 @@ includes/
   class-wpcc-settings.php       Options, feed parsing, category normalisation
   class-wpcc-categories.php     Keyword compilation and event categorisation
   class-wpcc-ics.php            Feed fetch/cache, iCalendar parser, RRULE expansion
+  class-wpcc-connectors.php     Squarespace, events-RSS and farmers-market sources
+  class-wpcc-dedupe.php         Cross-source duplicate merging
   class-wpcc-rest.php           /events and /categories routes
   class-wpcc-shortcode.php      [wpcalendarcats] + legacy iframe mode
   class-wpcc-admin.php          Settings and category editor screens

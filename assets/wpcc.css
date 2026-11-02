@@ -1170,12 +1170,351 @@
 	}
 }
 
+/* ══ 2.2.0 additions ═══════════════════════════════════════════════════ */
+
+/* ── Multi-day events ───────────────────────────────────────────────── */
+
+/* "→ Sep 27" under the date badge of a card row. */
+.wpcc-row-end {
+	display: block;
+	margin-top: 2px;
+	font-size: 0.55rem;
+	font-weight: 700;
+	line-height: 1.2;
+	white-space: nowrap;
+	color: var( --wpcc-cat-text, var( --wpcc-cat, var( --wpcc-accent ) ) );
+}
+
+/* A chip on any day after the event's first: ▸ marker + "cont'd". */
+.wpcc-chip.is-cont {
+	border-left-style: dashed;
+}
+
+.wpcc-chip.is-cont .wpcc-chip-dot {
+	font-size: 0.6rem;
+}
+
+.wpcc-chip-cont {
+	margin-right: 3px;
+	font-style: italic;
+	font-weight: 600;
+	color: var( --wpcc-text );
+}
+
+.wpcc-detail-also {
+	margin-top: 6px;
+	font-size: 0.75rem;
+	color: var( --wpcc-muted );
+}
+
+/* ── Day view ───────────────────────────────────────────────────────── */
+
+.wpcc-dayview-head {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: 14px 0;
+	background: var( --wpcc-surface-2 );
+	border-bottom: 1px solid var( --wpcc-border );
+}
+
+.wpcc-dayview-head .wpcc-dow-num {
+	margin: 0;
+	min-width: 32px;
+	padding: 4px 0;
+	font-size: 1rem;
+	line-height: 1.2;
+	text-align: center;
+}
+
+.wpcc-dayview-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 14px;
+	background: var( --wpcc-surface );
+}
+
+/* Agenda entries have room to breathe — let titles wrap instead of clipping. */
+.wpcc-dayview-list .wpcc-chip {
+	padding: 8px 10px;
+	font-size: 0.85rem;
+}
+
+.wpcc-dayview-list .wpcc-chip-text {
+	overflow: visible;
+	white-space: normal;
+	text-overflow: clip;
+}
+
+.wpcc-dayview-empty {
+	margin: 0;
+	padding: 24px 0;
+	font-size: 0.85rem;
+	text-align: center;
+	color: var( --wpcc-muted );
+}
+
+/* ── Remember my filter ─────────────────────────────────────────────── */
+
+.wpcc-filter-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px 16px;
+	margin-bottom: 8px;
+}
+
+.wpcc-filter-row .wpcc-filter-tip {
+	flex: 1 1 260px;
+	margin-bottom: 0;
+}
+
+.wpcc-remember {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex: none;
+	font-size: 0.75rem;
+	font-weight: 600;
+	white-space: nowrap;
+	cursor: pointer;
+	user-select: none;
+	color: var( --wpcc-muted );
+}
+
+.wpcc-remember.is-on {
+	color: var( --wpcc-text );
+}
+
+.wpcc-remember input {
+	width: 14px;
+	height: 14px;
+	margin: 0;
+	cursor: pointer;
+	accent-color: var( --wpcc-accent );
+}
+
+/* ── About this calendar ────────────────────────────────────────────── */
+
+/*
+ * Appended to <body> like the event popup, so it restates the shared
+ * tokens and picks up colours from the .wpcc-theme-* class on the overlay.
+ * Dark-theme links are lightened toward white: the configurable accent is
+ * often too dark to read on the dark surface.
+ */
+.wpcc-about-overlay {
+	--wpcc-accent: #147671;
+	--wpcc-highlight: #cf2c28;
+	--wpcc-link: var( --wpcc-accent );
+
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	font-size: 15px;
+	line-height: 1.5;
+}
+
+.wpcc-about-overlay.wpcc-theme-dark {
+	--wpcc-link: #95c1bf;
+}
+
+@supports ( color: color-mix( in srgb, red 10%, blue ) ) {
+	.wpcc-about-overlay.wpcc-theme-dark {
+		--wpcc-link: color-mix( in srgb, var( --wpcc-accent ) 45%, #ffffff );
+	}
+}
+
+.wpcc-about-overlay *,
+.wpcc-about-overlay *::before,
+.wpcc-about-overlay *::after {
+	box-sizing: border-box;
+}
+
+.wpcc-about-backdrop {
+	position: absolute;
+	inset: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	cursor: default;
+	background: rgba( 11, 42, 51, 0.4 );
+}
+
+.wpcc-about-overlay.wpcc-theme-dark .wpcc-about-backdrop {
+	background: rgba( 0, 0, 0, 0.6 );
+}
+
+.wpcc-about {
+	position: relative;
+	z-index: 1;
+	width: 480px;
+	max-width: 100%;
+	max-height: 80vh;
+	overflow-y: auto;
+	color: var( --wpcc-text );
+	background: var( --wpcc-surface );
+	border: 1px solid var( --wpcc-border );
+	border-radius: var( --wpcc-radius, 12px );
+	box-shadow: 0 12px 48px rgba( 0, 0, 0, 0.3 );
+}
+
+.wpcc-about:focus {
+	outline: none;
+}
+
+.wpcc-about-bar {
+	height: 5px;
+	background: var( --wpcc-accent );
+}
+
+.wpcc-about-inner {
+	padding: 18px 22px 22px;
+}
+
+.wpcc-about-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.wpcc-about-head h2 {
+	margin: 0;
+	padding: 0;
+	font-size: 1.25rem;
+	font-weight: 700;
+	line-height: 1.25;
+	color: var( --wpcc-text );
+}
+
+.wpcc-about-close {
+	flex: none;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	font: inherit;
+	font-size: 0.75rem;
+	line-height: 1;
+	color: var( --wpcc-muted );
+	background: var( --wpcc-surface-2 );
+	border: 1px solid var( --wpcc-border-soft );
+	border-radius: 8px;
+	cursor: pointer;
+}
+
+.wpcc-about-close:hover {
+	color: var( --wpcc-text );
+	background: var( --wpcc-hover );
+}
+
+.wpcc-about-intro {
+	margin: 0 0 16px;
+	font-size: 0.9rem;
+	color: var( --wpcc-text );
+}
+
+.wpcc-about-h {
+	margin: 18px 0 8px;
+	padding: 0;
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var( --wpcc-muted );
+}
+
+.wpcc-about-intro + .wpcc-about-h {
+	margin-top: 0;
+}
+
+.wpcc-about-note {
+	margin: 10px 0 0;
+	font-size: 0.8rem;
+	color: var( --wpcc-muted );
+}
+
+.wpcc-about-sources {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.wpcc-about-sources li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 0;
+	padding: 9px 0;
+	border-top: 1px solid var( --wpcc-border-soft );
+}
+
+.wpcc-about-sources li:first-child {
+	border-top: 0;
+}
+
+.wpcc-about-name {
+	font-size: 0.88rem;
+	font-weight: 600;
+	color: var( --wpcc-text );
+}
+
+.wpcc-about-overlay a {
+	color: var( --wpcc-link );
+	font-weight: 600;
+	text-decoration: none;
+	overflow-wrap: anywhere;
+}
+
+.wpcc-about-sources a {
+	flex: none;
+	font-size: 0.78rem;
+}
+
+.wpcc-about-overlay a:hover,
+.wpcc-about-overlay a:focus {
+	text-decoration: underline;
+}
+
+.wpcc-about-overlay :focus-visible {
+	outline: 2px solid var( --wpcc-link );
+	outline-offset: 2px;
+}
+
+/* Page behind the modal doesn't scroll while it's open. */
+html.wpcc-no-scroll {
+	overflow: hidden;
+}
+
+@media ( max-width: 640px ) {
+	.wpcc-about-overlay {
+		align-items: flex-end;
+		padding: 0;
+	}
+
+	.wpcc-about {
+		width: 100%;
+		max-height: 85vh;
+		border-radius: 16px 16px 0 0;
+	}
+}
+
 /* ── Print ──────────────────────────────────────────────────────────── */
 
 @media print {
 	.wpcc-controls,
 	.wpcc-search,
 	.wpcc-filters,
+	.wpcc-about-overlay,
 	.wpcc-popup {
 		display: none !important;
 	}

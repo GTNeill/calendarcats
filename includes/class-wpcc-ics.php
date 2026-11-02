@@ -33,31 +33,46 @@ class WPCC_ICS {
 		$events = array();
 		$errors = array();
 
-		foreach ( $feeds as $feed ) {
-			$ics = self::fetch( $feed['url'] );
-			if ( is_wp_error( $ics ) ) {
+		foreach ( $feeds as $rank => $feed ) {
+			$type = isset( $feed['type'] ) ? $feed['type'] : 'ics';
+
+			if ( 'squarespace' === $type ) {
+				$found = WPCC_Connectors::squarespace( $feed, $range_start, $range_end );
+			} elseif ( 'rss' === $type ) {
+				$found = WPCC_Connectors::rss( $feed, $range_start, $range_end );
+			} elseif ( 'builtin' === $type ) {
+				$found = WPCC_Connectors::farmers_markets( $feed, $range_start, $range_end );
+			} else {
+				$found = self::fetch( $feed['url'] );
+				if ( ! is_wp_error( $found ) ) {
+					$found = self::parse( $found, $feed['name'], $range_start, $range_end );
+				}
+			}
+
+			if ( is_wp_error( $found ) ) {
 				$errors[] = sprintf(
 					/* translators: 1: feed name, 2: error message */
 					__( '%1$s: %2$s', 'wpcalendarcats' ),
 					$feed['name'],
-					$ics->get_error_message()
+					$found->get_error_message()
 				);
 				continue;
 			}
-			$events = array_merge( $events, self::parse( $ics, $feed['name'], $range_start, $range_end ) );
+
+			// Earlier in the list = more authoritative when duplicates collapse.
+			foreach ( $found as $ev ) {
+				$ev['_rank'] = $rank;
+				$events[]    = $ev;
+			}
 		}
 
-		// De-duplicate — the same event can legitimately appear on two feeds.
-		$seen  = array();
-		$clean = array();
-		foreach ( $events as $ev ) {
-			$fingerprint = $ev['id'];
-			if ( isset( $seen[ $fingerprint ] ) ) {
-				continue;
-			}
-			$seen[ $fingerprint ] = true;
-			$clean[]              = $ev;
+		// The same real-world event is often published by several organisations
+		// whose areas overlap; collapse those, keeping the most authoritative.
+		$clean = WPCC_Dedupe::dedupe( $events );
+		foreach ( $clean as $i => $ev ) {
+			unset( $clean[ $i ]['_rank'] );
 		}
+		$clean = array_values( $clean );
 
 		usort(
 			$clean,
@@ -251,16 +266,21 @@ class WPCC_ICS {
 	 * @param DateTimeZone      $tz       Display timezone.
 	 * @return array
 	 */
-	protected static function shape( $base, $start, $duration, $id, $tz ) {
+	public static function shape( $base, $start, $duration, $id, $tz ) {
 		$start_local = ( new DateTimeImmutable( '@' . $start->getTimestamp() ) )->setTimezone( $tz );
-		$end_local   = $start_local->modify( '+' . (int) $duration . ' seconds' );
+		$has_end     = ! isset( $base['has_end'] ) || $base['has_end'];
 
 		if ( $base['all_day'] ) {
+			// Count whole days rather than adding seconds: a span that crosses
+			// the autumn clock change is 25 hours long, and +N*86400s from
+			// midnight would land on 23:00 of the previous day and lose a day.
+			$days      = max( 1, (int) round( $duration / DAY_IN_SECONDS ) );
 			$start_str = $start_local->format( 'Y-m-d' );
-			$end_str   = $end_local->format( 'Y-m-d' );
+			$end_str   = $has_end ? $start_local->modify( '+' . $days . ' days' )->format( 'Y-m-d' ) : '';
 		} else {
+			$end_local = $start_local->modify( '+' . (int) $duration . ' seconds' );
 			$start_str = $start_local->format( 'Y-m-d\TH:i:s' );
-			$end_str   = $end_local->format( 'Y-m-d\TH:i:s' );
+			$end_str   = $has_end ? $end_local->format( 'Y-m-d\TH:i:s' ) : '';
 		}
 
 		$cat = WPCC_Categories::categorize( $base['summary'], $base['description'] );

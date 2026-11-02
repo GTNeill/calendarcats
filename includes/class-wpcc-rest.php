@@ -94,6 +94,7 @@ class WPCC_REST {
 				'grouped'    => $grouped,
 				'categories' => self::category_payload(),
 				'groups'     => WPCC_Settings::get_groups(),
+				'sources'    => self::source_payload(),
 				'errors'     => $result['errors'],
 				'fetchedAt'  => $result['fetched_at'],
 				'timeMin'    => $min->format( 'c' ),
@@ -110,6 +111,29 @@ class WPCC_REST {
 	 */
 	public static function get_categories() {
 		return new WP_REST_Response( self::category_payload(), 200 );
+	}
+
+	/**
+	 * Where the events come from, for the About popup. `link` is the public
+	 * page presenting each calendar — never the raw feed URL — or null when
+	 * the source has no page of its own (e.g. a Google Calendar).
+	 *
+	 * @return array<int,array{name:string,link:?string}>
+	 */
+	protected static function source_payload() {
+		$out  = array();
+		$seen = array();
+		foreach ( WPCC_Settings::get_feeds() as $feed ) {
+			if ( isset( $seen[ $feed['name'] ] ) ) {
+				continue;
+			}
+			$seen[ $feed['name'] ] = true;
+			$out[]                 = array(
+				'name' => $feed['name'],
+				'link' => '' !== $feed['page'] ? $feed['page'] : null,
+			);
+		}
+		return $out;
 	}
 
 	protected static function category_payload() {

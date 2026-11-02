@@ -4,7 +4,7 @@
  * Plugin URI:        https://github.com/GTNeill/wpcalendarcats
  * Update URI:        https://github.com/GTNeill/wpcalendarcats
  * Description:       A self-contained community events calendar. Reads public iCalendar feeds directly, sorts events into keyword-driven categories, and renders them with a card view, a calendar grid, search and category filters — all via the [wpcalendarcats] shortcode. No external app or API key required.
- * Version:           2.1.3
+ * Version:           2.2.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            George Neill
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'WPCC_VERSION', '2.1.3' );
+define( 'WPCC_VERSION', '2.2.0' );
 define( 'WPCC_FILE', __FILE__ );
 define( 'WPCC_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WPCC_URL', plugin_dir_url( __FILE__ ) );
@@ -28,6 +28,8 @@ define( 'WPCC_URL', plugin_dir_url( __FILE__ ) );
 require_once WPCC_DIR . 'includes/default-categories.php';
 require_once WPCC_DIR . 'includes/class-wpcc-settings.php';
 require_once WPCC_DIR . 'includes/class-wpcc-categories.php';
+require_once WPCC_DIR . 'includes/class-wpcc-dedupe.php';
+require_once WPCC_DIR . 'includes/class-wpcc-connectors.php';
 require_once WPCC_DIR . 'includes/class-wpcc-ics.php';
 require_once WPCC_DIR . 'includes/class-wpcc-rest.php';
 require_once WPCC_DIR . 'includes/class-wpcc-shortcode.php';

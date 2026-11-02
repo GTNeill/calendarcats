@@ -191,6 +191,41 @@
 		return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 	}
 
+	function dayStamp( d ) {
+		return new Date( d.getFullYear(), d.getMonth(), d.getDate() ).getTime();
+	}
+
+	/**
+	 * The last calendar day an event occupies.
+	 *
+	 * iCal all-day DTEND is exclusive (a one-day event ends the next
+	 * midnight), so an all-day end is pulled back a day. A timed event's
+	 * last day is the day its end instant falls on. An empty end means the
+	 * source gave a start only.
+	 */
+	function eventLastDay( ev ) {
+		var start = parseLocal( ev.start );
+		if ( ! ev.end ) {
+			return start;
+		}
+		var end = parseLocal( ev.end );
+		if ( ev.isAllDay ) {
+			var last = new Date( end.getFullYear(), end.getMonth(), end.getDate() - 1 );
+			return last < start ? start : last;
+		}
+		return end < start ? start : end;
+	}
+
+	/** True for every day a (possibly multi-day) event spans. */
+	function eventOccursOnDay( ev, day ) {
+		var d = dayStamp( day );
+		return d >= dayStamp( parseLocal( ev.start ) ) && d <= dayStamp( eventLastDay( ev ) );
+	}
+
+	function isMultiDay( ev ) {
+		return dayStamp( eventLastDay( ev ) ) > dayStamp( parseLocal( ev.start ) );
+	}
+
 	function pad( n ) {
 		return n < 10 ? '0' + n : '' + n;
 	}
@@ -212,7 +247,10 @@
 	function rollingRange( unit, offset ) {
 		var start = startOfToday();
 		var end;
-		if ( 'week' === unit ) {
+		if ( 'day' === unit ) {
+			start.setDate( start.getDate() + offset );
+			end = new Date( start );
+		} else if ( 'week' === unit ) {
 			start.setDate( start.getDate() + offset * 7 );
 			end = new Date( start );
 			end.setDate( start.getDate() + 7 );
@@ -228,6 +266,13 @@
 	/** Calendar-aligned range — used by the grid so weeks line up. */
 	function alignedRange( unit, offset ) {
 		var today = startOfToday();
+		if ( 'day' === unit ) {
+			var day = new Date( today );
+			day.setDate( today.getDate() + offset );
+			var dayEnd = new Date( day );
+			dayEnd.setHours( 23, 59, 59, 999 );
+			return { start: day, end: dayEnd };
+		}
 		if ( 'week' === unit ) {
 			var sunday = new Date( today );
 			sunday.setDate( today.getDate() - today.getDay() + offset * 7 );
@@ -243,12 +288,25 @@
 	}
 
 	function rangeLabel( start, end, locale ) {
+		if ( isSameDay( start, end ) ) {
+			return fmt( start, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }, locale );
+		}
 		var lastOfMonth = new Date( end.getFullYear(), end.getMonth() + 1, 0 ).getDate();
 		if ( 1 === start.getDate() && end.getDate() === lastOfMonth && start.getMonth() === end.getMonth() ) {
 			return fmt( start, { month: 'long', year: 'numeric' }, locale );
 		}
 		return fmt( start, { month: 'short', day: 'numeric' }, locale ) + ' – ' +
 			fmt( end, { month: 'short', day: 'numeric', year: 'numeric' }, locale );
+	}
+
+	/** "Fri, Sep 25" or, for a multi-day event, "Sep 25 – Sep 27". */
+	function eventDateText( ev, locale ) {
+		var start = parseLocal( ev.start );
+		if ( isMultiDay( ev ) ) {
+			var md = { month: 'short', day: 'numeric' };
+			return fmt( start, md, locale ) + ' – ' + fmt( eventLastDay( ev ), md, locale );
+		}
+		return fmt( start, { weekday: 'short', month: 'short', day: 'numeric' }, locale );
 	}
 
 	function fmtTime( value, isAllDay, allDayLabel, locale ) {
@@ -416,6 +474,7 @@
 			plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
 			sun: '<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M19.1 4.9l-1.5 1.5M6.4 17.6l-1.5 1.5"/>',
 			moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+			info: '<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>',
 			search: '<circle cx="11" cy="11" r="7"/><path d="M20.5 20.5l-4.2-4.2"/>'
 		};
 
@@ -441,6 +500,35 @@
 		// Office"). It also keeps contrast checkers off a glyph they can't
 		// measure.
 		return '<span class="wpcc-icon" aria-hidden="true" style="font-size:' + Math.round( size * 0.9 ) + 'px">' + escapeHtml( icon ) + '</span>';
+	}
+
+	/* ── Cookies ───────────────────────────────────────────────────────
+	 * Used only for the opt-in "Remember my filter" checkbox. First-party,
+	 * browser-local, never read by the server.
+	 */
+	var REMEMBER_COOKIE = 'cc_remember_filter';
+	var FILTER_COOKIE = 'cc_category_filter';
+
+	function getCookie( name ) {
+		var m = document.cookie.match( new RegExp( '(?:^|; )' + name + '=([^;]*)' ) );
+		if ( ! m ) {
+			return null;
+		}
+		try {
+			return decodeURIComponent( m[ 1 ] );
+		} catch ( e ) {
+			return null;
+		}
+	}
+
+	function setCookie( name, value ) {
+		var secure = 'https:' === window.location.protocol ? '; Secure' : '';
+		document.cookie = name + '=' + encodeURIComponent( value ) +
+			'; Max-Age=' + ( 365 * 86400 ) + '; Path=/; SameSite=Lax' + secure;
+	}
+
+	function deleteCookie( name ) {
+		document.cookie = name + '=; Max-Age=0; Path=/; SameSite=Lax';
 	}
 
 	function el( tag, className, html ) {
@@ -475,13 +563,54 @@
 			zoom: ZOOM_DEFAULT,
 			search: '',
 			selected: [],
+			remember: false,
+			aboutOpen: false,
 			loading: true,
 			error: null,
 			data: null,
 			fetchedAt: null
 		};
 
+		// Opt-in: the filter is only read from / written to a cookie once the
+		// visitor has ticked "Remember my filter".
+		if ( config.showRemember && '1' === getCookie( REMEMBER_COOKIE ) ) {
+			state.remember = true;
+			var saved = getCookie( FILTER_COOKIE );
+			if ( saved ) {
+				state.selected = saved.split( ',' ).filter( Boolean );
+			}
+		}
+
+		function setSelected( next ) {
+			state.selected = next;
+			if ( state.remember ) {
+				writeFilterCookie();
+			}
+		}
+
+		function writeFilterCookie() {
+			if ( ! state.selected.length ) {
+				deleteCookie( FILTER_COOKIE );
+			} else {
+				setCookie( FILTER_COOKIE, state.selected.join( ',' ) );
+			}
+		}
+
+		function setRemember( on ) {
+			state.remember = on;
+			if ( on ) {
+				setCookie( REMEMBER_COOKIE, '1' );
+				writeFilterCookie();
+			} else {
+				deleteCookie( REMEMBER_COOKIE );
+				deleteCookie( FILTER_COOKIE );
+				// The current selection stays for this visit; it just isn't kept.
+			}
+		}
+
 		var openPopup = null;
+		var openAbout = null;
+		var aboutReturnFocus = null;
 		var hoverTimer = null;
 		var hideTimer = null;
 		var requestId = 0;
@@ -579,6 +708,17 @@
 			} );
 		}
 
+		/** "Also listed by A, B" for events merged from several sources. */
+		function alsoListedBy( ev ) {
+			var others = ( ev.sources || [] ).filter( function ( name ) {
+				return name && name !== ev.organizer;
+			} );
+			if ( ! others.length ) {
+				return '';
+			}
+			return ( strings.alsoListedBy || 'Also listed by' ) + ' ' + others.join( ', ' );
+		}
+
 		/* ── Popup ─────────────────────────────────────────────────────── */
 
 		function closePopup() {
@@ -596,7 +736,6 @@
 				? ( strings.allDay || 'All day' )
 				: fmtTime( ev.start, false, strings.allDay, locale ) + ( ev.end ? ' – ' + fmtTime( ev.end, false, strings.allDay, locale ) : '' );
 			var dur = fmtDuration( ev.start, ev.end, ev.isAllDay );
-			var start = parseLocal( ev.start );
 
 			// The popup lives on <body> (so no theme wrapper can clip it), which
 			// means it has to carry the theme class and accent vars itself.
@@ -615,7 +754,7 @@
 					'<div class="wpcc-popup-row">' +
 						'<span class="wpcc-popup-ico">🕒</span>' +
 						'<div><div class="wpcc-popup-date">' +
-							fmt( start, { weekday: 'short' }, locale ) + ', ' + fmt( start, { month: 'short' }, locale ) + ' ' + start.getDate() +
+							escapeHtml( eventDateText( ev, locale ) ) +
 						'</div><div class="wpcc-popup-time">' + escapeHtml( timeStr ) +
 						( dur ? ' <span class="wpcc-chip-dur">' + escapeHtml( dur ) + '</span>' : '' ) +
 						'</div></div>' +
@@ -634,6 +773,11 @@
 			if ( ev.organizer ) {
 				html += '<div class="wpcc-popup-row"><span class="wpcc-popup-ico">👤</span>' +
 					'<div class="wpcc-popup-muted">' + escapeHtml( ev.organizer ) + '</div></div>';
+			}
+			var alsoPopup = alsoListedBy( ev );
+			if ( alsoPopup ) {
+				html += '<div class="wpcc-popup-row"><span class="wpcc-popup-ico">🔗</span>' +
+					'<div class="wpcc-popup-muted">' + escapeHtml( alsoPopup ) + '</div></div>';
 			}
 
 			html += '<div class="wpcc-popup-sep"></div>';
@@ -725,6 +869,133 @@
 				}
 				showPopup( ev, node );
 			} );
+		}
+
+
+		/* ── About modal ───────────────────────────────────────────────── */
+
+		function focusables( container ) {
+			return Array.prototype.slice.call( container.querySelectorAll( 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])' ) );
+		}
+
+		function onAboutKey( e ) {
+			if ( ! openAbout ) {
+				return;
+			}
+			if ( 'Escape' === e.key ) {
+				e.preventDefault();
+				closeAbout();
+				return;
+			}
+			if ( 'Tab' === e.key ) {
+				var items = focusables( openAbout );
+				if ( ! items.length ) {
+					return;
+				}
+				var first = items[ 0 ];
+				var last = items[ items.length - 1 ];
+				if ( e.shiftKey && ( document.activeElement === first || document.activeElement === openAbout.firstChild ) ) {
+					e.preventDefault();
+					last.focus();
+				} else if ( ! e.shiftKey && document.activeElement === last ) {
+					e.preventDefault();
+					first.focus();
+				} else if ( ! openAbout.contains( document.activeElement ) ) {
+					e.preventDefault();
+					first.focus();
+				}
+			}
+		}
+
+		function closeAbout() {
+			if ( ! openAbout ) {
+				return;
+			}
+			document.removeEventListener( 'keydown', onAboutKey, true );
+			if ( openAbout.parentNode ) {
+				openAbout.parentNode.removeChild( openAbout );
+			}
+			openAbout = null;
+			document.documentElement.classList.remove( 'wpcc-no-scroll' );
+			// The toolbar is rebuilt on every render, so look the button up again.
+			var opener = root.querySelector( '.wpcc-about-btn' );
+			if ( opener ) {
+				opener.focus();
+			}
+		}
+
+		function aboutBody() {
+			var html = '<p class="wpcc-about-intro">' + escapeHtml( strings.aboutIntro || '' ) + '</p>' +
+				'<h3 class="wpcc-about-h">' + escapeHtml( strings.aboutSources || 'Where the events come from' ) + '</h3>';
+
+			var sources = state.data && state.data.sources;
+			if ( state.loading && ! sources ) {
+				html += '<p class="wpcc-about-note">' + escapeHtml( strings.aboutLoading || 'Loading sources…' ) + '</p>';
+			} else if ( ! sources || ! sources.length ) {
+				html += '<p class="wpcc-about-note">' + escapeHtml( strings.aboutNoSources || 'The source list is not available right now.' ) + '</p>';
+			} else {
+				html += '<ul class="wpcc-about-sources">';
+				sources.forEach( function ( src ) {
+					html += '<li><span class="wpcc-about-name">' + escapeHtml( src.name ) + '</span>';
+					if ( src.link && /^https?:\/\//i.test( src.link ) ) {
+						html += '<a href="' + escapeHtml( src.link ) + '" target="_blank" rel="noopener noreferrer">' +
+							escapeHtml( strings.visitSite || 'Visit site' ) + ' ↗</a>';
+					}
+					html += '</li>';
+				} );
+				html += '</ul>';
+			}
+
+			html += '<p class="wpcc-about-note">' + escapeHtml( strings.aboutCorrections || '' ) + '</p>';
+
+			if ( config.contactEmail ) {
+				html += '<p class="wpcc-about-note">' + escapeHtml( strings.aboutContact || '' ) + ' ' +
+					'<a href="mailto:' + escapeHtml( config.contactEmail ) + '">✉ ' + escapeHtml( config.contactEmail ) + '</a></p>';
+			}
+
+			html += '<h3 class="wpcc-about-h">' + escapeHtml( strings.aboutPrivacy || 'Privacy' ) + '</h3>' +
+				'<p class="wpcc-about-note">' + escapeHtml( strings.aboutPrivacyBody || '' ) +
+				( config.showRemember ? ' ' + escapeHtml( strings.aboutPrivacyRemember || '' ) : '' ) + '</p>';
+			return html;
+		}
+
+		function showAbout() {
+			closePopup();
+			closeAbout();
+
+			// Lives on <body> like the event popup, so it carries the theme
+			// class and accent vars itself.
+			var overlay = el( 'div', 'wpcc-about-overlay wpcc-theme-' + state.theme );
+			overlay.style.setProperty( '--wpcc-accent', config.accent || '#147671' );
+			overlay.style.setProperty( '--wpcc-highlight', config.highlight || '#CF2C28' );
+
+			var backdrop = el( 'button', 'wpcc-about-backdrop' );
+			backdrop.type = 'button';
+			backdrop.tabIndex = -1;
+			backdrop.setAttribute( 'aria-label', strings.close || 'Close' );
+			backdrop.addEventListener( 'click', closeAbout );
+			overlay.appendChild( backdrop );
+
+			var dialog = el( 'div', 'wpcc-about' );
+			dialog.setAttribute( 'role', 'dialog' );
+			dialog.setAttribute( 'aria-modal', 'true' );
+			dialog.setAttribute( 'aria-labelledby', 'wpcc-about-title' );
+			dialog.tabIndex = -1;
+			dialog.innerHTML = '<div class="wpcc-about-bar"></div>' +
+				'<div class="wpcc-about-inner">' +
+					'<div class="wpcc-about-head">' +
+						'<h2 id="wpcc-about-title">' + escapeHtml( strings.about || 'About this calendar' ) + '</h2>' +
+						'<button type="button" class="wpcc-about-close" aria-label="' + escapeHtml( strings.close || 'Close' ) + '">✕</button>' +
+					'</div>' + aboutBody() +
+				'</div>';
+			dialog.querySelector( '.wpcc-about-close' ).addEventListener( 'click', closeAbout );
+			overlay.appendChild( dialog );
+
+			document.body.appendChild( overlay );
+			document.documentElement.classList.add( 'wpcc-no-scroll' );
+			openAbout = overlay;
+			document.addEventListener( 'keydown', onAboutKey, true );
+			dialog.focus();
 		}
 
 		/* ── Rendering ─────────────────────────────────────────────────── */
@@ -965,9 +1236,9 @@
 
 			var bar = el( 'div', 'wpcc-bar' );
 
-			// Week / month.
+			// Today / week / month.
 			var unitGroup = el( 'div', 'wpcc-group' );
-			[ [ 'week', strings.week || 'Week' ], [ 'month', strings.month || 'Month' ] ].forEach( function ( pair ) {
+			[ [ 'day', strings.day || 'Today' ], [ 'week', strings.week || 'Week' ], [ 'month', strings.month || 'Month' ] ].forEach( function ( pair ) {
 				var b = button( escapeHtml( pair[ 1 ] ), null, state.unit === pair[ 0 ] ? 'is-active' : '', function () {
 					state.unit = pair[ 0 ];
 					state.offset = 0;
@@ -979,7 +1250,8 @@
 
 			// Navigation.
 			var nav = el( 'div', 'wpcc-group' );
-			nav.appendChild( button( svgIcon( 'prev' ), strings.prev || 'Previous', 'wpcc-icon-btn', function () {
+			var isDay = 'day' === state.unit;
+			nav.appendChild( button( svgIcon( 'prev' ), isDay ? ( strings.prevDay || 'Previous day' ) : ( strings.prev || 'Previous' ), 'wpcc-icon-btn', function () {
 				state.offset -= 1;
 				load();
 			} ) );
@@ -987,7 +1259,7 @@
 				state.offset = 0;
 				load();
 			} ) );
-			nav.appendChild( button( svgIcon( 'next' ), strings.next || 'Next', 'wpcc-icon-btn', function () {
+			nav.appendChild( button( svgIcon( 'next' ), isDay ? ( strings.nextDay || 'Next day' ) : ( strings.next || 'Next' ), 'wpcc-icon-btn', function () {
 				state.offset += 1;
 				load();
 			} ) );
@@ -1009,6 +1281,12 @@
 			bar.appendChild( button( svgIcon( 'refresh' ), strings.refresh || 'Refresh', 'wpcc-icon-btn', function () {
 				load();
 			} ) );
+
+			if ( config.showAbout ) {
+				bar.appendChild( button( svgIcon( 'info' ), strings.about || 'About this calendar', 'wpcc-icon-btn wpcc-about-btn', function () {
+					showAbout();
+				} ) );
+			}
 
 			if ( config.showZoom ) {
 				bar.appendChild( renderZoom() );
@@ -1125,7 +1403,24 @@
 				return wrap;
 			}
 
-			wrap.appendChild( el( 'div', 'wpcc-filter-tip', escapeHtml( strings.filterTip || '' ) ) );
+			var tipRow = el( 'div', 'wpcc-filter-row' );
+			tipRow.appendChild( el( 'div', 'wpcc-filter-tip', escapeHtml( strings.filterTip || '' ) ) );
+
+			if ( config.showRemember ) {
+				var remember = el( 'label', 'wpcc-remember' + ( state.remember ? ' is-on' : '' ) );
+				remember.title = strings.rememberTitle || '';
+				var box = document.createElement( 'input' );
+				box.type = 'checkbox';
+				box.checked = state.remember;
+				box.addEventListener( 'change', function () {
+					setRemember( box.checked );
+					remember.classList.toggle( 'is-on', box.checked );
+				} );
+				remember.appendChild( box );
+				remember.appendChild( document.createTextNode( ' ' + ( strings.rememberFilter || 'Remember my filter' ) ) );
+				tipRow.appendChild( remember );
+			}
+			wrap.appendChild( tipRow );
 
 			var pills = el( 'div', 'wpcc-pills' );
 			var allActive = 0 === state.selected.length;
@@ -1133,7 +1428,7 @@
 			var all = el( 'button', 'wpcc-pill' + ( allActive ? ' is-active' : '' ), escapeHtml( strings.all || 'All' ) );
 			all.type = 'button';
 			all.addEventListener( 'click', function () {
-				state.selected = [];
+				setSelected( [] );
 				render();
 			} );
 			pills.appendChild( all );
@@ -1146,17 +1441,15 @@
 				pill.addEventListener( 'click', function () {
 					if ( allActive ) {
 						// First pick solos that category.
-						state.selected = [ cat.key ];
+						setSelected( [ cat.key ] );
 					} else if ( active ) {
-						state.selected = state.selected.filter( function ( k ) {
+						setSelected( state.selected.filter( function ( k ) {
 							return k !== cat.key;
-						} );
+						} ) );
 					} else {
-						state.selected = state.selected.concat( [ cat.key ] );
+						var next = state.selected.concat( [ cat.key ] );
 						// Selecting everything is the same as selecting nothing.
-						if ( state.selected.length === cats.length ) {
-							state.selected = [];
-						}
+						setSelected( next.length === cats.length ? [] : next );
 					}
 					render();
 				} );
@@ -1250,13 +1543,14 @@
 		function categoryCard( key, events, cat, todayMid ) {
 			cat = cat || { label: key, icon: '📌', color: '#5A5A5A' };
 
+			// A multi-day event that's still running counts as current, not past.
 			var future = events.filter( function ( ev ) {
-				return parseLocal( ev.start ) >= todayMid;
+				return eventLastDay( ev ) >= todayMid;
 			} ).sort( function ( a, b ) {
 				return parseLocal( a.start ) - parseLocal( b.start );
 			} );
 			var past = events.filter( function ( ev ) {
-				return parseLocal( ev.start ) < todayMid;
+				return eventLastDay( ev ) < todayMid;
 			} ).sort( function ( a, b ) {
 				return parseLocal( b.start ) - parseLocal( a.start );
 			} );
@@ -1308,7 +1602,10 @@
 
 		function eventRow( ev, color ) {
 			var start = parseLocal( ev.start );
-			var today = isSameDay( start, new Date() );
+			var today = eventOccursOnDay( ev, new Date() );
+			var multi = isMultiDay( ev );
+			var last = eventLastDay( ev );
+			var lastText = fmt( last, { month: 'short', day: 'numeric' }, locale );
 			var dur = fmtDuration( ev.start, ev.end, ev.isAllDay );
 
 			var row = el( 'div', 'wpcc-row' );
@@ -1318,6 +1615,7 @@
 					'<span class="wpcc-row-dow">' + escapeHtml( fmt( start, { weekday: 'short' }, locale ) ) + '</span>' +
 					'<span class="wpcc-row-day">' + start.getDate() + '</span>' +
 					'<span class="wpcc-row-mon">' + escapeHtml( fmt( start, { month: 'short' }, locale ) ) + '</span>' +
+					( multi ? '<span class="wpcc-row-end"><span class="wpcc-sr-only">' + escapeHtml( strings.through || 'through' ) + ' </span>→ ' + escapeHtml( lastText ) + '</span>' : '' ) +
 				'</div>' +
 				'<div class="wpcc-row-info">' +
 					'<div class="wpcc-row-title">' + escapeHtml( ev.title ) +
@@ -1353,7 +1651,9 @@
 			var frame = el( 'div', 'wpcc-grid-frame' );
 			frame.appendChild( el( 'div', 'wpcc-grid-title', escapeHtml( monthTitle( range.start, range.end ) ) ) );
 
-			if ( 'week' === state.unit ) {
+			if ( 'day' === state.unit ) {
+				frame.appendChild( dayView( kept, range.start ) );
+			} else if ( 'week' === state.unit ) {
 				frame.appendChild( weekGrid( kept, range.start ) );
 			} else {
 				frame.appendChild( monthGrid( kept, range.start ) );
@@ -1364,6 +1664,9 @@
 		}
 
 		function monthTitle( start, end ) {
+			if ( isSameDay( start, end ) ) {
+				return fmt( start, { month: 'long', year: 'numeric' }, locale );
+			}
 			var sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
 			if ( sameMonth ) {
 				return fmt( start, { month: 'long', year: 'numeric' }, locale );
@@ -1390,6 +1693,37 @@
 				head.appendChild( cell );
 			}
 			return head;
+		}
+
+		/** Single-day agenda: a header for the day and its events stacked below. */
+		function dayView( events, day ) {
+			var isToday = isSameDay( day, new Date() );
+			var grid = el( 'div', 'wpcc-grid is-day' );
+
+			grid.appendChild( el( 'div', 'wpcc-dayview-head' + ( isToday ? ' is-today' : '' ),
+				'<span class="wpcc-dow-name">' + escapeHtml( DOW[ day.getDay() ] ) + '</span>' +
+				'<span class="wpcc-dow-num' + ( isToday ? ' is-today' : '' ) + '">' + day.getDate() + '</span>'
+			) );
+
+			var dayEvents = events.filter( function ( ev ) {
+				return eventOccursOnDay( ev, day );
+			} ).sort( function ( a, b ) {
+				if ( a.isAllDay !== b.isAllDay ) {
+					return a.isAllDay ? -1 : 1;
+				}
+				return parseLocal( a.start ) - parseLocal( b.start );
+			} );
+
+			var list = el( 'div', 'wpcc-dayview-list' );
+			if ( ! dayEvents.length ) {
+				list.appendChild( el( 'p', 'wpcc-dayview-empty', escapeHtml( strings.noEventsDay || 'No events scheduled for this day.' ) ) );
+			} else {
+				dayEvents.forEach( function ( ev ) {
+					list.appendChild( eventChip( ev, day ) );
+				} );
+			}
+			grid.appendChild( list );
+			return grid;
 		}
 
 		function weekGrid( events, start ) {
@@ -1444,7 +1778,7 @@
 			var cell = el( 'div', 'wpcc-day' + ( inMonth ? '' : ' is-out' ) + ( isSameDay( date, new Date() ) ? ' is-today' : '' ) );
 
 			var dayEvents = events.filter( function ( ev ) {
-				return isSameDay( parseLocal( ev.start ), date );
+				return eventOccursOnDay( ev, date );
 			} ).sort( function ( a, b ) {
 				if ( a.isAllDay !== b.isAllDay ) {
 					return a.isAllDay ? -1 : 1;
@@ -1456,23 +1790,30 @@
 
 			var list = el( 'div', 'wpcc-chips' );
 			dayEvents.forEach( function ( ev ) {
-				list.appendChild( eventChip( ev ) );
+				list.appendChild( eventChip( ev, date ) );
 			} );
 			cell.appendChild( list );
 			return cell;
 		}
 
-		function eventChip( ev ) {
-			var chip = el( 'div', 'wpcc-chip' );
+		function eventChip( ev, date ) {
+			// Multi-day events render on every day they span; any day after the
+			// start is a continuation.
+			var cont = !! date && ! isSameDay( parseLocal( ev.start ), date );
+			var chip = el( 'div', 'wpcc-chip' + ( cont ? ' is-cont' : '' ) );
 			setCat( chip, ev.categoryColor );
 
 			var time = '';
-			if ( ! ev.isAllDay ) {
+			if ( cont ) {
+				var abbr = strings.continuedAbbr || "cont'd";
+				time = '<span class="wpcc-chip-cont" aria-hidden="true">' + escapeHtml( abbr ) + '</span>' +
+					'<span class="wpcc-sr-only">' + escapeHtml( ( strings.continued || 'continued' ) + ': ' ) + '</span>';
+			} else if ( ! ev.isAllDay ) {
 				time = '<span class="wpcc-chip-time">' +
 					escapeHtml( fmtTime( ev.start, false, strings.allDay, locale ).replace( ':00', '' ).toLowerCase() ) +
 					'</span>';
 			}
-			chip.innerHTML = '<span class="wpcc-chip-dot">' + ( ev.isAllDay ? '●' : '◆' ) + '</span>' +
+			chip.innerHTML = '<span class="wpcc-chip-dot">' + ( cont ? '▸' : ev.isAllDay ? '●' : '◆' ) + '</span>' +
 				'<span class="wpcc-chip-text">' + time + escapeHtml( ev.title ) + '</span>';
 
 			bindPopup( chip, ev );
@@ -1516,14 +1857,13 @@
 		}
 
 		function detailCard( ev ) {
-			var start = parseLocal( ev.start );
 			var card = el( 'div', 'wpcc-detail' );
 			setCat( card, ev.categoryColor );
 
 			var html = '<div class="wpcc-detail-head">' +
 					'<span class="wpcc-detail-cat">' + iconHtml( ev.categoryIcon, 13 ) + ' ' + escapeHtml( ev.categoryLabel ) + '</span>' +
 					'<span class="wpcc-detail-when">' +
-						escapeHtml( fmt( start, { weekday: 'short', month: 'short', day: 'numeric' }, locale ) ) + ' · ' +
+						escapeHtml( eventDateText( ev, locale ) ) + ' · ' +
 						escapeHtml( fmtTime( ev.start, ev.isAllDay, strings.allDay, locale ) ) +
 					'</span>' +
 				'</div>' +
@@ -1535,6 +1875,10 @@
 			}
 			if ( ev.description ) {
 				html += '<div class="wpcc-detail-desc">' + linkify( ev.description ) + '</div>';
+			}
+			var alsoDetail = alsoListedBy( ev );
+			if ( alsoDetail ) {
+				html += '<div class="wpcc-detail-also">' + escapeHtml( alsoDetail ) + '</div>';
 			}
 
 			html += '<div class="wpcc-detail-links">';

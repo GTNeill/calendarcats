@@ -28,6 +28,11 @@ class WPCC_Settings {
 		return array(
 			'feeds'            => "c_50dc8883383193a9f6ba4d86cd23a836978e1d42028f0e7bb263955d5539912c@group.calendar.google.com | 40th Ward Events\n"
 				. 'c_05dba706bb25f28f63bfc0b821c9f8d5e29d9f2b105e78949388b675eb801572@group.calendar.google.com | 40th Ward Community',
+			// Extra source types. Blank by default so upgrading never adds
+			// calendars to an existing site; see the admin screen for examples.
+			'feeds_squarespace' => '',
+			'feeds_rss'        => '',
+			'farmers_markets'  => 0,
 			'accent'           => '#147671',
 			'highlight'        => '#CF2C28',
 			'default_view'     => 'cards',
@@ -37,6 +42,9 @@ class WPCC_Settings {
 			'show_zoom'        => 1,
 			'show_search'      => 1,
 			'show_controls'    => 1,
+			'show_remember'    => 1,
+			'show_about'       => 1,
+			'contact_email'    => '',
 			'submit_url'       => '',
 			'submit_label'     => 'Submit Your Event',
 			'cache_minutes'    => 15,
@@ -86,19 +94,82 @@ class WPCC_Settings {
 	}
 
 	/**
-	 * Parse the feeds textarea into usable URLs.
+	 * Parse every feed textarea into usable sources.
 	 *
-	 * Each line is either a full .ics URL or a bare Google Calendar id, with
-	 * an optional display name after a pipe:
+	 * Each line is a URL (or, for the iCal box, a bare Google Calendar id),
+	 * then an optional display name, then an optional public page that
+	 * presents the calendar — the About popup links to that page:
 	 *
-	 *   https://example.com/events.ics | Village Events
+	 *   https://example.com/events.ics | Village Events | https://example.com/events
 	 *   abc123@group.calendar.google.com | Ward Events
 	 *
-	 * @return array<int,array{url:string,name:string}>
+	 * The line format is identical to the hosted Community Calendar app's
+	 * admin panel, so lines can be copied between the two verbatim.
+	 *
+	 * @return array<int,array{type:string,url:string,name:string,page:string}>
 	 */
 	public static function get_feeds() {
-		$raw   = (string) self::get_option_value( 'feeds', '' );
 		$feeds = array();
+
+		foreach ( self::parse_lines( (string) self::get_option_value( 'feeds', '' ) ) as $row ) {
+			$url = self::normalize_feed( $row['value'] );
+			if ( '' === $url ) {
+				continue;
+			}
+			$feeds[] = array(
+				'type' => 'ics',
+				'url'  => $url,
+				'name' => '' !== $row['name'] ? $row['name'] : __( 'Calendar', 'wpcalendarcats' ),
+				'page' => $row['page'],
+			);
+		}
+
+		// Squarespace's feed URL is already its events page, so it doubles as the link.
+		foreach ( self::parse_lines( (string) self::get_option_value( 'feeds_squarespace', '' ) ) as $row ) {
+			if ( ! preg_match( '#^https?://#i', $row['value'] ) ) {
+				continue;
+			}
+			$feeds[] = array(
+				'type' => 'squarespace',
+				'url'  => esc_url_raw( $row['value'] ),
+				'name' => '' !== $row['name'] ? $row['name'] : __( 'Events', 'wpcalendarcats' ),
+				'page' => '' !== $row['page'] ? $row['page'] : esc_url_raw( $row['value'] ),
+			);
+		}
+
+		foreach ( self::parse_lines( (string) self::get_option_value( 'feeds_rss', '' ) ) as $row ) {
+			if ( ! preg_match( '#^https?://#i', $row['value'] ) ) {
+				continue;
+			}
+			$feeds[] = array(
+				'type' => 'rss',
+				'url'  => esc_url_raw( $row['value'] ),
+				'name' => '' !== $row['name'] ? $row['name'] : __( 'Events', 'wpcalendarcats' ),
+				'page' => $row['page'],
+			);
+		}
+
+		if ( self::get_option_value( 'farmers_markets', 0 ) ) {
+			$feeds[] = array(
+				'type' => 'builtin',
+				'url'  => WPCC_Connectors::FARMERS_MARKET_PAGE_URL,
+				'name' => WPCC_Connectors::FARMERS_MARKET_NAME,
+				'page' => WPCC_Connectors::FARMERS_MARKET_PAGE_URL,
+			);
+		}
+
+		return $feeds;
+	}
+
+	/**
+	 * Split a feeds textarea into value / name / page rows, dropping blanks
+	 * and # comments.
+	 *
+	 * @param string $raw Textarea contents.
+	 * @return array<int,array{value:string,name:string,page:string}>
+	 */
+	public static function parse_lines( $raw ) {
+		$rows = array();
 
 		foreach ( preg_split( '/\r?\n/', $raw ) as $line ) {
 			$line = trim( $line );
@@ -106,30 +177,25 @@ class WPCC_Settings {
 				continue;
 			}
 
-			$name = '';
-			if ( false !== strpos( $line, '|' ) ) {
-				list( $line, $name ) = array_map( 'trim', explode( '|', $line, 2 ) );
-			}
-			if ( '' === $line ) {
+			$parts = array_map( 'trim', explode( '|', $line ) );
+			$value = isset( $parts[0] ) ? $parts[0] : '';
+			if ( '' === $value ) {
 				continue;
 			}
 
-			$url = self::normalize_feed( $line );
-			if ( '' === $url ) {
-				continue;
+			$page = isset( $parts[2] ) ? $parts[2] : '';
+			if ( '' !== $page && ! preg_match( '#^https?://#i', $page ) ) {
+				$page = ''; // Only a full http(s) URL is a usable link.
 			}
 
-			if ( '' === $name ) {
-				$name = __( 'Calendar', 'wpcalendarcats' );
-			}
-
-			$feeds[] = array(
-				'url'  => $url,
-				'name' => $name,
+			$rows[] = array(
+				'value' => $value,
+				'name'  => isset( $parts[1] ) ? $parts[1] : '',
+				'page'  => '' === $page ? '' : esc_url_raw( $page ),
 			);
 		}
 
-		return $feeds;
+		return $rows;
 	}
 
 	/**

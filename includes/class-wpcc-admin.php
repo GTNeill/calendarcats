@@ -90,6 +90,11 @@ class WPCC_Admin {
 		$feeds          = isset( $input['feeds'] ) ? (string) $input['feeds'] : '';
 		$clean['feeds'] = trim( wp_strip_all_tags( $feeds ) );
 
+		foreach ( array( 'feeds_squarespace', 'feeds_rss' ) as $key ) {
+			$clean[ $key ] = isset( $input[ $key ] ) ? trim( wp_strip_all_tags( (string) $input[ $key ] ) ) : '';
+		}
+		$clean['farmers_markets'] = empty( $input['farmers_markets'] ) ? 0 : 1;
+
 		$clean['accent']    = sanitize_hex_color( isset( $input['accent'] ) ? $input['accent'] : '' );
 		$clean['highlight'] = sanitize_hex_color( isset( $input['highlight'] ) ? $input['highlight'] : '' );
 		if ( ! $clean['accent'] ) {
@@ -100,13 +105,16 @@ class WPCC_Admin {
 		}
 
 		$clean['default_view']  = in_array( isset( $input['default_view'] ) ? $input['default_view'] : '', array( 'cards', 'calendar' ), true ) ? $input['default_view'] : 'cards';
-		$clean['default_unit']  = in_array( isset( $input['default_unit'] ) ? $input['default_unit'] : '', array( 'week', 'month' ), true ) ? $input['default_unit'] : 'month';
+		$clean['default_unit']  = in_array( isset( $input['default_unit'] ) ? $input['default_unit'] : '', array( 'day', 'week', 'month' ), true ) ? $input['default_unit'] : 'month';
 		$clean['default_theme'] = in_array( isset( $input['default_theme'] ) ? $input['default_theme'] : '', array( 'light', 'dark' ), true ) ? $input['default_theme'] : 'light';
 
 		$clean['show_theme_toggle'] = empty( $input['show_theme_toggle'] ) ? 0 : 1;
 		$clean['show_zoom']         = empty( $input['show_zoom'] ) ? 0 : 1;
 		$clean['show_search']       = empty( $input['show_search'] ) ? 0 : 1;
 		$clean['show_controls']     = empty( $input['show_controls'] ) ? 0 : 1;
+		$clean['show_remember']     = empty( $input['show_remember'] ) ? 0 : 1;
+		$clean['show_about']        = empty( $input['show_about'] ) ? 0 : 1;
+		$clean['contact_email']     = isset( $input['contact_email'] ) ? sanitize_email( $input['contact_email'] ) : '';
 
 		$clean['submit_url']   = isset( $input['submit_url'] ) ? esc_url_raw( trim( $input['submit_url'] ) ) : '';
 		$clean['submit_label'] = isset( $input['submit_label'] ) ? sanitize_text_field( $input['submit_label'] ) : $defaults['submit_label'];
@@ -157,9 +165,9 @@ class WPCC_Admin {
 						<td>
 							<textarea id="wpcc_feeds" name="<?php echo esc_attr( $name ); ?>[feeds]" rows="6" class="large-text code"><?php echo esc_textarea( $settings['feeds'] ); ?></textarea>
 							<p class="description">
-								<?php esc_html_e( 'One feed per line. Each line is a public .ics URL or a Google Calendar ID, optionally followed by a pipe and a display name:', 'wpcalendarcats' ); ?>
+								<?php esc_html_e( 'One feed per line. Each line is a public .ics URL or a Google Calendar ID, optionally followed by a pipe and a display name, and a second pipe and the public page that presents the calendar (the About popup links there):', 'wpcalendarcats' ); ?>
 							</p>
-							<pre class="wpcc-code-sample">https://example.com/events.ics | Village Events
+							<pre class="wpcc-code-sample">https://example.com/events.ics | Village Events | https://example.com/events
 abc123@group.calendar.google.com | Ward Events</pre>
 							<p class="description">
 								<?php esc_html_e( 'For a Google Calendar, the calendar must be set to "Make available to public". Lines starting with # are ignored.', 'wpcalendarcats' ); ?>
@@ -178,6 +186,28 @@ abc123@group.calendar.google.com | Ward Events</pre>
 							<?php else : ?>
 								<p class="wpcc-warning"><?php esc_html_e( 'No usable feeds configured yet — the calendar will render empty.', 'wpcalendarcats' ); ?></p>
 							<?php endif; ?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wpcc_feeds_sqsp"><?php esc_html_e( 'Squarespace events', 'wpcalendarcats' ); ?></label></th>
+						<td>
+							<textarea id="wpcc_feeds_sqsp" name="<?php echo esc_attr( $name ); ?>[feeds_squarespace]" rows="3" class="large-text code"><?php echo esc_textarea( $settings['feeds_squarespace'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'For organisations whose site is Squarespace and publishes no .ics. Use the events page URL (it already serves as the About link):', 'wpcalendarcats' ); ?></p>
+							<pre class="wpcc-code-sample">https://www.thegreaterrockwell.org/events | Greater Rockwell Organization</pre>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wpcc_feeds_rss"><?php esc_html_e( 'Events RSS', 'wpcalendarcats' ); ?></label></th>
+						<td>
+							<textarea id="wpcc_feeds_rss" name="<?php echo esc_attr( $name ); ?>[feeds_rss]" rows="3" class="large-text code"><?php echo esc_textarea( $settings['feeds_rss'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'For Wild Apricot sites, which offer no calendar export, only an events RSS feed. These events show a start time only — the feed carries no end time or location.', 'wpcalendarcats' ); ?></p>
+							<pre class="wpcc-code-sample">https://www.dankhaus.com/events/rss | DANK Haus | https://www.dankhaus.com/events</pre>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Built-in sources', 'wpcalendarcats' ); ?></th>
+						<td>
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[farmers_markets]" value="1" <?php checked( $settings['farmers_markets'], 1 ); ?> /> <?php esc_html_e( 'Chicago farmers markets in 60625 (Lincoln Square, Ravenswood, North Park) — the published 2026 season', 'wpcalendarcats' ); ?></label>
 						</td>
 					</tr>
 					<tr>
@@ -213,6 +243,7 @@ abc123@group.calendar.google.com | Ward Events</pre>
 								<option value="calendar" <?php selected( $settings['default_view'], 'calendar' ); ?>><?php esc_html_e( 'Calendar grid', 'wpcalendarcats' ); ?></option>
 							</select>
 							<select name="<?php echo esc_attr( $name ); ?>[default_unit]">
+								<option value="day" <?php selected( $settings['default_unit'], 'day' ); ?>><?php esc_html_e( 'One day at a time (Today)', 'wpcalendarcats' ); ?></option>
 								<option value="week" <?php selected( $settings['default_unit'], 'week' ); ?>><?php esc_html_e( 'One week at a time', 'wpcalendarcats' ); ?></option>
 								<option value="month" <?php selected( $settings['default_unit'], 'month' ); ?>><?php esc_html_e( 'One month at a time', 'wpcalendarcats' ); ?></option>
 							</select>
@@ -225,10 +256,19 @@ abc123@group.calendar.google.com | Ward Events</pre>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Show', 'wpcalendarcats' ); ?></th>
 						<td>
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_controls]" value="1" <?php checked( $settings['show_controls'], 1 ); ?> /> <?php esc_html_e( 'Navigation controls (week/month, back/today/forward, view switch)', 'wpcalendarcats' ); ?></label><br />
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_controls]" value="1" <?php checked( $settings['show_controls'], 1 ); ?> /> <?php esc_html_e( 'Navigation controls (today/week/month, back/today/forward, view switch)', 'wpcalendarcats' ); ?></label><br />
 							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_search]" value="1" <?php checked( $settings['show_search'], 1 ); ?> /> <?php esc_html_e( 'Search box', 'wpcalendarcats' ); ?></label><br />
 							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_theme_toggle]" value="1" <?php checked( $settings['show_theme_toggle'], 1 ); ?> /> <?php esc_html_e( 'Light/dark theme toggle', 'wpcalendarcats' ); ?></label><br />
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_zoom]" value="1" <?php checked( $settings['show_zoom'], 1 ); ?> /> <?php esc_html_e( 'Content zoom control (text size)', 'wpcalendarcats' ); ?></label>
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_zoom]" value="1" <?php checked( $settings['show_zoom'], 1 ); ?> /> <?php esc_html_e( 'Content zoom control (text size)', 'wpcalendarcats' ); ?></label><br />
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_remember]" value="1" <?php checked( $settings['show_remember'], 1 ); ?> /> <?php esc_html_e( '"Remember my filter" checkbox (visitor opts in to a cookie that keeps their category choice)', 'wpcalendarcats' ); ?></label><br />
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_about]" value="1" <?php checked( $settings['show_about'], 1 ); ?> /> <?php esc_html_e( 'About button (lists the sources and links to each one)', 'wpcalendarcats' ); ?></label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wpcc_contact"><?php esc_html_e( 'Contact email', 'wpcalendarcats' ); ?></label></th>
+						<td>
+							<input type="email" id="wpcc_contact" name="<?php echo esc_attr( $name ); ?>[contact_email]" value="<?php echo esc_attr( $settings['contact_email'] ); ?>" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Optional. Shown in the About popup for visitors who want their organisation added. Leave blank to omit.', 'wpcalendarcats' ); ?></p>
 						</td>
 					</tr>
 					<tr>
@@ -275,7 +315,9 @@ abc123@group.calendar.google.com | Ward Events</pre>
 				<thead><tr><th><?php esc_html_e( 'Attribute', 'wpcalendarcats' ); ?></th><th><?php esc_html_e( 'What it does', 'wpcalendarcats' ); ?></th></tr></thead>
 				<tbody>
 					<tr><td><code>view="calendar"</code></td><td><?php esc_html_e( 'Start on the calendar grid instead of the cards.', 'wpcalendarcats' ); ?></td></tr>
-					<tr><td><code>unit="week"</code></td><td><?php esc_html_e( 'Start on a one-week range instead of a month.', 'wpcalendarcats' ); ?></td></tr>
+					<tr><td><code>unit="week"</code></td><td><?php esc_html_e( 'Start on a one-week range instead of a month. Use unit="day" to start on Today.', 'wpcalendarcats' ); ?></td></tr>
+					<tr><td><code>remember="no"</code></td><td><?php esc_html_e( 'Hide the "Remember my filter" checkbox.', 'wpcalendarcats' ); ?></td></tr>
+					<tr><td><code>about="no"</code></td><td><?php esc_html_e( 'Hide the About button.', 'wpcalendarcats' ); ?></td></tr>
 					<tr><td><code>theme="dark"</code></td><td><?php esc_html_e( 'Start in the dark theme.', 'wpcalendarcats' ); ?></td></tr>
 					<tr><td><code>categories="ward,arts"</code></td><td><?php esc_html_e( 'Only show these category keys.', 'wpcalendarcats' ); ?></td></tr>
 					<tr><td><code>search="no"</code></td><td><?php esc_html_e( 'Hide the search box.', 'wpcalendarcats' ); ?></td></tr>

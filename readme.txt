@@ -1,10 +1,10 @@
 === WPCalendarCats ===
 Contributors: gtneill
-Tags: calendar, events, ical, ics, google calendar, community
+Tags: calendar, events, ical, ics, google calendar, community, squarespace, rss
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.1.3
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,15 +19,20 @@ It runs entirely on your own site. There is no companion app to host, no API key
 **What visitors get**
 
 * **Cards view** — one card per category, each listing its upcoming events, with past events in the period tucked below a divider.
-* **Calendar view** — a month or week grid with colour-coded event chips.
+* **Calendar view** — a month, week or single-day grid with colour-coded event chips. Multi-day events appear on every day they span, with a continuation marker after the first.
+* **Today view** — a one-day agenda, with previous / next day navigation.
 * **Hover or tap popups** with time, duration, location, description, organiser, a link back to the source event, and an "Add to my calendar" link.
 * **Search** across titles, locations, descriptions and category names within the current range.
 * **Category filter pills** — the first pick solos a category; selecting everything reverts to "All".
+* **Remember my filter** — an opt-in checkbox beside the category pills. When ticked, the visitor's chosen categories are kept in a first-party cookie and reopen as their default view. Off by default; nothing is stored unless they tick it.
+* **About popup** — an accessible dialog listing every source calendar with a "Visit site" link, plus an optional contact email.
 * **Light and dark themes** with an optional toggle.
 
 **What you control**
 
 * **Feeds** — one per line. Paste a full `.ics` URL, or just a Google Calendar id. Add `| Display Name` to label a feed.
+* **More sources than .ics** — Squarespace event pages, Wild Apricot events RSS feeds, and a built-in Chicago 60625 farmers-market schedule, alongside ordinary iCalendar feeds.
+* **Cross-source de-duplication** — when two sources list the same event, it is shown once and credited to both ("Also listed by …").
 * **Categories** — every category's key, label, emoji or image icon, colour, group and keyword list is editable, reorderable, and exportable as JSON. Order is priority: the first category whose keywords match an event wins.
 * **Colours** — accent and highlight colours, so the calendar sits inside your theme instead of on top of it.
 * **Cache duration** — how long feeds are held before being refetched.
@@ -63,11 +68,14 @@ A single category, no chrome — good for a sidebar:
 **Shortcode attributes**
 
 * `view` — `cards` or `calendar`. Default: the admin setting.
-* `unit` — `month` or `week`. Default: the admin setting.
+* `unit` — `month`, `week` or `day`. Default: the admin setting.
 * `theme` — `light` or `dark`. Default: the admin setting.
 * `search` — `yes` or `no`.
 * `controls` — `yes` or `no`. Hides the whole toolbar when `no`.
 * `theme_toggle` — `yes` or `no`.
+* `zoom` — `yes` or `no`.
+* `remember` — `yes` or `no`. Shows the "Remember my filter" checkbox.
+* `about` — `yes` or `no`. Shows the About button and popup.
 * `categories` — comma-separated category keys to restrict the calendar to.
 * `max_width` — pixel width to centre the calendar within.
 * `submit_url` — URL for a "Submit Your Event" button.
@@ -75,6 +83,14 @@ A single category, no chrome — good for a sidebar:
 * `url`, `height` — used only by `mode="iframe"`.
 
 `[ward_calendar]` is accepted as an alias.
+
+**Analytics**
+
+The plugin does not bundle or inject any analytics (GoatCounter included). If you want traffic stats, add the script through your theme or a header/footer snippet plugin.
+
+**Squarespace and RSS sources**
+
+Squarespace and RSS feeds are added in their own settings boxes, one per line as `URL | Display Name | About-page link`. RSS (Wild Apricot) events carry a start time only — no end time or location — so they display without an end. The built-in farmers-market schedule covers the 2026 season only and needs updating each year.
 
 == Frequently Asked Questions ==
 
@@ -104,10 +120,23 @@ Every class is prefixed `wpcc-`, and the palette runs through CSS custom propert
 
 == Upgrade Notice ==
 
+= 2.2.0 =
+Adds multi-day events, a Today view, an opt-in remembered category filter, an About popup, Squarespace / RSS / farmers-market sources and cross-source de-duplication. Existing shortcodes and settings keep working; new options default to off.
+
 = 2.0.0 =
 Major rewrite: the plugin now renders the calendar itself instead of embedding an external app. Existing `[wpcalendarcats]` shortcodes keep working, and your old iframe URL is preserved — add `mode="iframe"` to any shortcode you want to keep as an embed.
 
 == Changelog ==
+
+= 2.2.0 =
+* **Multi-day events.** An event that spans several days now shows on every day it covers in the Calendar view, with a "▸ cont'd" chip after the first day. Card rows show "→ Mon D" under the date badge, an in-progress multi-day event stays in the current list instead of dropping to "Earlier this period", and the popup and search results show the full range ("Sep 25 – Sep 27"). All-day ends are handled as exclusive, per iCalendar, so a one-day all-day event is not stretched to two.
+* **Today view.** New `unit="day"` shortcode value and a Today button in the Week / Month switch: a one-day agenda with previous / next day navigation.
+* **Remember my filter.** New opt-in checkbox beside the category pills (`remember="yes|no"`, also an admin setting). Stores the picked categories in a first-party cookie (`cc_category_filter`, with `cc_remember_filter` as the opt-in marker) for up to a year. Choosing All, or unticking the box, removes it. Cards and Calendar share one selection.
+* **About popup.** New About button (`about="yes|no"`, also an admin setting) opening a keyboard-accessible dialog: Esc to close, focus kept inside, focus returned on close. It lists every source with a "Visit site" link and shows an optional contact email (new admin field).
+* **New source types.** Squarespace event pages, Wild Apricot events RSS feeds, and a built-in 2026 Chicago 60625 farmers-market schedule, each configurable in the admin. RSS events are start-only.
+* **Cross-source de-duplication.** The same event published by two sources is merged into one, keeping the richer record and listing the other publisher as "Also listed by".
+* Accessibility: new text and controls were checked against WCAG 1.4.3 (4.5:1) in both themes; the dialog is labelled and modal, and the continuation marker is announced as "continued".
+* The `/events` REST response gains a `sources` list (name and link) used by the About popup.
 
 = 2.1.3 =
 * **Accessibility: the toolbar icons are now inline SVG instead of text glyphs.** The back, forward, refresh, text-size and light/dark buttons used characters (‹ › ⟳ − + ☾ ☀), and the search box used an emoji magnifier. Their contrast was fine when measured directly — 5.24:1 in light mode, 6.2:1 in dark — but a character is not a shape, so contrast checkers can only report it as "unable to determine", and it stays on the report permanently. SVG icons have no text to measure, so the rule no longer applies. They also render identically on every platform, which glyphs and emoji do not.
