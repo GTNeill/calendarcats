@@ -618,7 +618,7 @@
 	padding: 10px 13px;
 	font: inherit;
 	line-height: inherit;
-	letter-spacing: normal;
+	letter-spacing: inherit;
 	text-align: left;
 	text-transform: none;
 	color: inherit;
@@ -907,7 +907,7 @@
 	font-family: inherit;
 	font-size: 0.7rem;
 	line-height: 1.25;
-	letter-spacing: normal;
+	letter-spacing: inherit;
 	text-align: left;
 	text-transform: none;
 	color: inherit;
