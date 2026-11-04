@@ -160,6 +160,30 @@ assets/
   embed.js                      Legacy iframe auto-resize
 ```
 
+## Releasing a new version
+
+WordPress sites update from the **latest published GitHub Release**, not from the repo or tags alone. `includes/class-wpcc-updater.php` reads `/releases/latest`, strips the leading `v` from `tag_name`, and downloads the asset named exactly `wpcalendarcats.zip`.
+
+1. Bump the version in three places: `Version:` and `WPCC_VERSION` in `wpcalendarcats.php`, and `Stable tag` in `readme.txt`.
+2. Add a `= X.Y.Z =` entry under `== Changelog ==` in `readme.txt` (and an Upgrade Notice if needed).
+3. Check syntax: `php -l` on each PHP file, `node --check assets/wpcc.js`.
+4. Rebuild the zip from the folder *above* the repo (the zip must contain a top-level `wpcalendarcats/` folder):
+   ```
+   cd /home/user
+   zip -rq /tmp/wpcalendarcats.zip wpcalendarcats -x "wpcalendarcats/.git/*" "wpcalendarcats/wpcalendarcats.zip" "wpcalendarcats/.gitignore"
+   cp /tmp/wpcalendarcats.zip wpcalendarcats/wpcalendarcats.zip
+   ```
+5. Commit, tag and push:
+   ```
+   git add -A && git commit -m "Describe change (vX.Y.Z)"
+   git tag vX.Y.Z
+   git push origin main && git push origin vX.Y.Z
+   ```
+6. Create the release at https://github.com/GTNeill/wpcalendarcats/releases/new: pick tag `vX.Y.Z`, title `vX.Y.Z`, paste the changelog entry, attach `wpcalendarcats.zip`, and click **Publish release**. It must not be a draft or pre-release, or `/releases/latest` ignores it. With the GitHub CLI: `gh release create vX.Y.Z wpcalendarcats.zip --title vX.Y.Z --notes-file notes.md`.
+7. Verify: `curl -s https://api.github.com/repos/GTNeill/wpcalendarcats/releases/latest` should show the new `tag_name` and an asset called `wpcalendarcats.zip`.
+
+WordPress caches update checks, so sites may lag; Dashboard → Updates → **Check again** forces it.
+
 ## Requirements
 
 WordPress 5.8+, PHP 7.4+.
