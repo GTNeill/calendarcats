@@ -9,11 +9,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Admin screens and form handlers.
+ */
 class WPCC_Admin {
 
 	const PAGE_MAIN = 'wpcalendarcats';
 	const PAGE_CATS = 'wpcalendarcats-categories';
 
+	/**
+	 * Register hooks.
+	 */
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
@@ -24,6 +30,9 @@ class WPCC_Admin {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
 	}
 
+	/**
+	 * Add the admin menu pages.
+	 */
 	public static function add_menu() {
 		add_menu_page(
 			__( 'Calendar Cats', 'wpcalendarcats' ),
@@ -54,12 +63,24 @@ class WPCC_Admin {
 		);
 	}
 
+	/**
+	 * Load the admin assets on this plugin's screens.
+	 */
 	public static function enqueue( $hook ) {
 		if ( false === strpos( (string) $hook, 'wpcalendarcats' ) ) {
 			return;
 		}
 		wp_enqueue_style( 'wpcc-admin', WPCC_URL . 'assets/admin.css', array(), WPCC_VERSION );
 		wp_enqueue_script( 'wpcc-admin', WPCC_URL . 'assets/admin.js', array(), WPCC_VERSION, true );
+		wp_localize_script(
+			'wpcc-admin',
+			'wpccAdmin',
+			array(
+				/* translators: %s: category name */
+				'confirmRemove' => __( 'Remove "%s"? Its events will fall through to the catch-all category.', 'wpcalendarcats' ),
+				'newCategory'   => __( 'New category', 'wpcalendarcats' ),
+			)
+		);
 	}
 
 	/* ── General settings ────────────────────────────────────────────── */
@@ -119,8 +140,8 @@ class WPCC_Admin {
 		$clean['submit_url']   = isset( $input['submit_url'] ) ? esc_url_raw( trim( $input['submit_url'] ) ) : '';
 		$clean['submit_label'] = isset( $input['submit_label'] ) ? sanitize_text_field( $input['submit_label'] ) : $defaults['submit_label'];
 
-		$minutes                 = isset( $input['cache_minutes'] ) ? absint( $input['cache_minutes'] ) : 15;
-		$clean['cache_minutes']  = max( 1, min( 1440, $minutes ) );
+		$minutes                = isset( $input['cache_minutes'] ) ? absint( $input['cache_minutes'] ) : 15;
+		$clean['cache_minutes'] = max( 1, min( 1440, $minutes ) );
 
 		$clean['group_government'] = isset( $input['group_government'] ) ? sanitize_text_field( $input['group_government'] ) : $defaults['group_government'];
 		$clean['group_community']  = isset( $input['group_community'] ) ? sanitize_text_field( $input['group_community'] ) : $defaults['group_community'];
@@ -128,12 +149,23 @@ class WPCC_Admin {
 		$clean['calendar_url']   = isset( $input['calendar_url'] ) ? esc_url_raw( trim( $input['calendar_url'] ) ) : '';
 		$clean['default_height'] = isset( $input['default_height'] ) ? max( 300, absint( $input['default_height'] ) ) : $defaults['default_height'];
 
-		// Feed list changed — the cached bodies are no longer relevant.
-		WPCC_ICS::flush_cache();
+		// Only a change to the feed list makes cached bodies stale.
+		$old = get_option( 'wpcalendarcats_settings', array() );
+		$old = is_array( $old ) ? $old : array();
+		foreach ( array( 'feeds', 'feeds_squarespace', 'feeds_rss', 'farmers_markets' ) as $key ) {
+			$before = isset( $old[ $key ] ) ? (string) $old[ $key ] : '';
+			if ( (string) $clean[ $key ] !== $before ) {
+				WPCC_ICS::flush_cache();
+				break;
+			}
+		}
 
 		return $clean;
 	}
 
+	/**
+	 * Render the Settings page.
+	 */
 	public static function render_main() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -150,7 +182,7 @@ class WPCC_Admin {
 			<?php settings_errors(); ?>
 
 			<h2 class="nav-tab-wrapper">
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_MAIN ) ); ?>" class="nav-tab nav-tab-active"><?php esc_html_e( 'Settings', 'wpcalendarcats' ); ?></a>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_MAIN ) ); ?>" class="nav-tab nav-tab-active" aria-current="page"><?php esc_html_e( 'Settings', 'wpcalendarcats' ); ?></a>
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_CATS ) ); ?>" class="nav-tab"><?php esc_html_e( 'Categories', 'wpcalendarcats' ); ?></a>
 			</h2>
 
@@ -168,7 +200,7 @@ class WPCC_Admin {
 								<?php esc_html_e( 'One feed per line. Each line is a public .ics URL or a Google Calendar ID, optionally followed by a pipe and a display name, and a second pipe and the public page that presents the calendar (the About popup links there):', 'wpcalendarcats' ); ?>
 							</p>
 							<pre class="wpcc-code-sample">https://example.com/events.ics | Village Events | https://example.com/events
-abc123@group.calendar.google.com | Ward Events</pre>
+abc123@group.calendar.google.com | Neighborhood Events</pre>
 							<p class="description">
 								<?php esc_html_e( 'For a Google Calendar, the calendar must be set to "Make available to public". Lines starting with # are ignored.', 'wpcalendarcats' ); ?>
 							</p>
@@ -192,8 +224,8 @@ abc123@group.calendar.google.com | Ward Events</pre>
 						<th scope="row"><label for="wpcc_feeds_sqsp"><?php esc_html_e( 'Squarespace events', 'wpcalendarcats' ); ?></label></th>
 						<td>
 							<textarea id="wpcc_feeds_sqsp" name="<?php echo esc_attr( $name ); ?>[feeds_squarespace]" rows="3" class="large-text code"><?php echo esc_textarea( $settings['feeds_squarespace'] ); ?></textarea>
-							<p class="description"><?php esc_html_e( 'For organisations whose site is Squarespace and publishes no .ics. Use the events page URL (it already serves as the About link):', 'wpcalendarcats' ); ?></p>
-							<pre class="wpcc-code-sample">https://www.thegreaterrockwell.org/events | Greater Rockwell Organization</pre>
+							<p class="description"><?php esc_html_e( 'For organizations whose site is Squarespace and publishes no .ics. Use the events page URL (it already serves as the About link):', 'wpcalendarcats' ); ?></p>
+							<pre class="wpcc-code-sample">https://example.org/events | Neighborhood Association</pre>
 						</td>
 					</tr>
 					<tr>
@@ -201,7 +233,7 @@ abc123@group.calendar.google.com | Ward Events</pre>
 						<td>
 							<textarea id="wpcc_feeds_rss" name="<?php echo esc_attr( $name ); ?>[feeds_rss]" rows="3" class="large-text code"><?php echo esc_textarea( $settings['feeds_rss'] ); ?></textarea>
 							<p class="description"><?php esc_html_e( 'For Wild Apricot sites, which offer no calendar export, only an events RSS feed. These events show a start time only — the feed carries no end time or location.', 'wpcalendarcats' ); ?></p>
-							<pre class="wpcc-code-sample">https://www.dankhaus.com/events/rss | DANK Haus | https://www.dankhaus.com/events</pre>
+							<pre class="wpcc-code-sample">https://example.org/events/rss | Community Hall | https://example.org/events</pre>
 						</td>
 					</tr>
 					<tr>
@@ -223,7 +255,7 @@ abc123@group.calendar.google.com | Ward Events</pre>
 				<h2><?php esc_html_e( 'Appearance', 'wpcalendarcats' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Colours', 'wpcalendarcats' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Colors', 'wpcalendarcats' ); ?></th>
 						<td>
 							<label>
 								<input type="text" name="<?php echo esc_attr( $name ); ?>[accent]" value="<?php echo esc_attr( $settings['accent'] ); ?>" class="wpcc-color small-text" />
@@ -238,16 +270,19 @@ abc123@group.calendar.google.com | Ward Events</pre>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Default view', 'wpcalendarcats' ); ?></th>
 						<td>
-							<select name="<?php echo esc_attr( $name ); ?>[default_view]">
+							<label class="screen-reader-text" for="wpcc_default_view"><?php esc_html_e( 'Default layout', 'wpcalendarcats' ); ?></label>
+							<select id="wpcc_default_view" name="<?php echo esc_attr( $name ); ?>[default_view]">
 								<option value="cards" <?php selected( $settings['default_view'], 'cards' ); ?>><?php esc_html_e( 'Cards (grouped by category)', 'wpcalendarcats' ); ?></option>
 								<option value="calendar" <?php selected( $settings['default_view'], 'calendar' ); ?>><?php esc_html_e( 'Calendar grid', 'wpcalendarcats' ); ?></option>
 							</select>
-							<select name="<?php echo esc_attr( $name ); ?>[default_unit]">
+							<label class="screen-reader-text" for="wpcc_default_unit"><?php esc_html_e( 'Default time range', 'wpcalendarcats' ); ?></label>
+							<select id="wpcc_default_unit" name="<?php echo esc_attr( $name ); ?>[default_unit]">
 								<option value="day" <?php selected( $settings['default_unit'], 'day' ); ?>><?php esc_html_e( 'One day at a time (Today)', 'wpcalendarcats' ); ?></option>
 								<option value="week" <?php selected( $settings['default_unit'], 'week' ); ?>><?php esc_html_e( 'One week at a time', 'wpcalendarcats' ); ?></option>
 								<option value="month" <?php selected( $settings['default_unit'], 'month' ); ?>><?php esc_html_e( 'One month at a time', 'wpcalendarcats' ); ?></option>
 							</select>
-							<select name="<?php echo esc_attr( $name ); ?>[default_theme]">
+							<label class="screen-reader-text" for="wpcc_default_theme"><?php esc_html_e( 'Default theme', 'wpcalendarcats' ); ?></label>
+							<select id="wpcc_default_theme" name="<?php echo esc_attr( $name ); ?>[default_theme]">
 								<option value="light" <?php selected( $settings['default_theme'], 'light' ); ?>><?php esc_html_e( 'Light theme', 'wpcalendarcats' ); ?></option>
 								<option value="dark" <?php selected( $settings['default_theme'], 'dark' ); ?>><?php esc_html_e( 'Dark theme', 'wpcalendarcats' ); ?></option>
 							</select>
@@ -256,27 +291,32 @@ abc123@group.calendar.google.com | Ward Events</pre>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Show', 'wpcalendarcats' ); ?></th>
 						<td>
+							<fieldset>
+							<legend class="screen-reader-text"><span><?php esc_html_e( 'Show', 'wpcalendarcats' ); ?></span></legend>
 							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_controls]" value="1" <?php checked( $settings['show_controls'], 1 ); ?> /> <?php esc_html_e( 'Navigation controls (today/week/month, back/today/forward, view switch)', 'wpcalendarcats' ); ?></label><br />
 							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_search]" value="1" <?php checked( $settings['show_search'], 1 ); ?> /> <?php esc_html_e( 'Search box', 'wpcalendarcats' ); ?></label><br />
 							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_theme_toggle]" value="1" <?php checked( $settings['show_theme_toggle'], 1 ); ?> /> <?php esc_html_e( 'Light/dark theme toggle', 'wpcalendarcats' ); ?></label><br />
 							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_zoom]" value="1" <?php checked( $settings['show_zoom'], 1 ); ?> /> <?php esc_html_e( 'Content zoom control (text size)', 'wpcalendarcats' ); ?></label><br />
 							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_remember]" value="1" <?php checked( $settings['show_remember'], 1 ); ?> /> <?php esc_html_e( '"Remember my filter" checkbox (visitor opts in to a cookie that keeps their category choice)', 'wpcalendarcats' ); ?></label><br />
 							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[show_about]" value="1" <?php checked( $settings['show_about'], 1 ); ?> /> <?php esc_html_e( 'About button (lists the sources and links to each one)', 'wpcalendarcats' ); ?></label>
+							</fieldset>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="wpcc_contact"><?php esc_html_e( 'Contact email', 'wpcalendarcats' ); ?></label></th>
 						<td>
 							<input type="email" id="wpcc_contact" name="<?php echo esc_attr( $name ); ?>[contact_email]" value="<?php echo esc_attr( $settings['contact_email'] ); ?>" class="regular-text" />
-							<p class="description"><?php esc_html_e( 'Optional. Shown in the About popup for visitors who want their organisation added. Leave blank to omit.', 'wpcalendarcats' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Optional. Shown in the About popup for visitors who want their organization added. Leave blank to omit.', 'wpcalendarcats' ); ?></p>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Group headings', 'wpcalendarcats' ); ?></th>
 						<td>
-							<input type="text" name="<?php echo esc_attr( $name ); ?>[group_government]" value="<?php echo esc_attr( $settings['group_government'] ); ?>" class="regular-text" />
+							<label class="screen-reader-text" for="wpcc_group_government"><?php esc_html_e( 'Heading for the government group', 'wpcalendarcats' ); ?></label>
+							<input type="text" id="wpcc_group_government" name="<?php echo esc_attr( $name ); ?>[group_government]" value="<?php echo esc_attr( $settings['group_government'] ); ?>" class="regular-text" />
 							<code>government</code><br />
-							<input type="text" name="<?php echo esc_attr( $name ); ?>[group_community]" value="<?php echo esc_attr( $settings['group_community'] ); ?>" class="regular-text" />
+							<label class="screen-reader-text" for="wpcc_group_community"><?php esc_html_e( 'Heading for the community group', 'wpcalendarcats' ); ?></label>
+							<input type="text" id="wpcc_group_community" name="<?php echo esc_attr( $name ); ?>[group_community]" value="<?php echo esc_attr( $settings['group_community'] ); ?>" class="regular-text" />
 							<code>community</code>
 							<p class="description"><?php esc_html_e( 'Section headings above each group of category cards.', 'wpcalendarcats' ); ?></p>
 						</td>
@@ -285,7 +325,8 @@ abc123@group.calendar.google.com | Ward Events</pre>
 						<th scope="row"><label for="wpcc_submit_url"><?php esc_html_e( 'Submit-an-event link', 'wpcalendarcats' ); ?></label></th>
 						<td>
 							<input type="url" id="wpcc_submit_url" name="<?php echo esc_attr( $name ); ?>[submit_url]" value="<?php echo esc_attr( $settings['submit_url'] ); ?>" class="regular-text" placeholder="https://…" />
-							<input type="text" name="<?php echo esc_attr( $name ); ?>[submit_label]" value="<?php echo esc_attr( $settings['submit_label'] ); ?>" class="regular-text" />
+							<label class="screen-reader-text" for="wpcc_submit_label"><?php esc_html_e( 'Button label', 'wpcalendarcats' ); ?></label>
+							<input type="text" id="wpcc_submit_label" name="<?php echo esc_attr( $name ); ?>[submit_label]" value="<?php echo esc_attr( $settings['submit_label'] ); ?>" class="regular-text" />
 							<p class="description"><?php esc_html_e( 'Optional button in the control bar — a form, a mailto:, or any page. Leave the URL empty to hide it.', 'wpcalendarcats' ); ?></p>
 						</td>
 					</tr>
@@ -298,7 +339,8 @@ abc123@group.calendar.google.com | Ward Events</pre>
 						<th scope="row"><label for="wpcc_calendar_url"><?php esc_html_e( 'External app URL', 'wpcalendarcats' ); ?></label></th>
 						<td>
 							<input type="url" id="wpcc_calendar_url" name="<?php echo esc_attr( $name ); ?>[calendar_url]" value="<?php echo esc_attr( $settings['calendar_url'] ); ?>" class="regular-text" placeholder="https://…" />
-							<input type="number" name="<?php echo esc_attr( $name ); ?>[default_height]" value="<?php echo esc_attr( $settings['default_height'] ); ?>" min="300" step="50" class="small-text" />
+							<label class="screen-reader-text" for="wpcc_default_height"><?php esc_html_e( 'Initial height in pixels', 'wpcalendarcats' ); ?></label>
+							<input type="number" id="wpcc_default_height" name="<?php echo esc_attr( $name ); ?>[default_height]" value="<?php echo esc_attr( $settings['default_height'] ); ?>" min="300" step="50" class="small-text" />
 							<?php esc_html_e( 'px initial height', 'wpcalendarcats' ); ?>
 						</td>
 					</tr>
@@ -323,7 +365,7 @@ abc123@group.calendar.google.com | Ward Events</pre>
 					<tr><td><code>search="no"</code></td><td><?php esc_html_e( 'Hide the search box.', 'wpcalendarcats' ); ?></td></tr>
 					<tr><td><code>controls="no"</code></td><td><?php esc_html_e( 'Hide the navigation bar — useful for a compact widget-style embed.', 'wpcalendarcats' ); ?></td></tr>
 					<tr><td><code>theme_toggle="no"</code></td><td><?php esc_html_e( 'Hide the light/dark toggle.', 'wpcalendarcats' ); ?></td></tr>
-					<tr><td><code>max_width="1100"</code></td><td><?php esc_html_e( 'Cap the width in pixels and centre it.', 'wpcalendarcats' ); ?></td></tr>
+					<tr><td><code>max_width="1100"</code></td><td><?php esc_html_e( 'Cap the width in pixels and center it.', 'wpcalendarcats' ); ?></td></tr>
 					<tr><td><code>mode="iframe" url="…"</code></td><td><?php esc_html_e( 'Legacy: embed an externally hosted calendar app instead.', 'wpcalendarcats' ); ?></td></tr>
 				</tbody>
 			</table>
@@ -359,7 +401,7 @@ abc123@group.calendar.google.com | Ward Events</pre>
 
 			<h2 class="nav-tab-wrapper">
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_MAIN ) ); ?>" class="nav-tab"><?php esc_html_e( 'Settings', 'wpcalendarcats' ); ?></a>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_CATS ) ); ?>" class="nav-tab nav-tab-active"><?php esc_html_e( 'Categories', 'wpcalendarcats' ); ?></a>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_CATS ) ); ?>" class="nav-tab nav-tab-active" aria-current="page"><?php esc_html_e( 'Categories', 'wpcalendarcats' ); ?></a>
 			</h2>
 
 			<p class="description">
@@ -402,7 +444,20 @@ abc123@group.calendar.google.com | Ward Events</pre>
 		</div>
 
 		<script type="text/template" id="wpcc-cat-template">
-			<?php self::render_category_row( '__INDEX__', array_merge( WPCC_Categories::fallback(), array( 'key' => '', 'label' => '', 'icon' => '', 'color' => '#147671' ) ) ); ?>
+			<?php
+			self::render_category_row(
+				'__INDEX__',
+				array_merge(
+					WPCC_Categories::fallback(),
+					array(
+						'key'   => '',
+						'label' => '',
+						'icon'  => '',
+						'color' => '#147671',
+					)
+				)
+			);
+			?>
 		</script>
 		<?php
 	}
@@ -420,15 +475,15 @@ abc123@group.calendar.google.com | Ward Events</pre>
 		?>
 		<div class="wpcc-cat-row" data-key="<?php echo esc_attr( $cat['key'] ); ?>">
 			<div class="wpcc-cat-head">
-				<span class="wpcc-cat-handle" title="<?php esc_attr_e( 'Move', 'wpcalendarcats' ); ?>">⠿</span>
-				<span class="wpcc-cat-swatch" style="background: <?php echo esc_attr( $cat['color'] ); ?>"></span>
+				<span class="wpcc-cat-handle" aria-hidden="true" title="<?php esc_attr_e( 'Move', 'wpcalendarcats' ); ?>">⠿</span>
+				<span class="wpcc-cat-swatch" aria-hidden="true" style="background: <?php echo esc_attr( $cat['color'] ); ?>"></span>
 				<strong class="wpcc-cat-title"><?php echo esc_html( '' !== $cat['label'] ? $cat['label'] : __( 'New category', 'wpcalendarcats' ) ); ?></strong>
 				<span class="wpcc-cat-badge"><?php echo esc_html( count( $cat['keywords'] ) ); ?> <?php esc_html_e( 'keywords', 'wpcalendarcats' ); ?></span>
 				<span class="wpcc-cat-actions">
-					<button type="button" class="button-link wpcc-move-up" title="<?php esc_attr_e( 'Move up', 'wpcalendarcats' ); ?>">↑</button>
-					<button type="button" class="button-link wpcc-move-down" title="<?php esc_attr_e( 'Move down', 'wpcalendarcats' ); ?>">↓</button>
+					<button type="button" class="button-link wpcc-move-up" aria-label="<?php esc_attr_e( 'Move up', 'wpcalendarcats' ); ?>" title="<?php esc_attr_e( 'Move up', 'wpcalendarcats' ); ?>">↑</button>
+					<button type="button" class="button-link wpcc-move-down" aria-label="<?php esc_attr_e( 'Move down', 'wpcalendarcats' ); ?>" title="<?php esc_attr_e( 'Move down', 'wpcalendarcats' ); ?>">↓</button>
 					<?php if ( ! $is_other ) : ?>
-						<button type="button" class="button-link wpcc-remove" title="<?php esc_attr_e( 'Remove', 'wpcalendarcats' ); ?>">✕</button>
+						<button type="button" class="button-link wpcc-remove" aria-label="<?php esc_attr_e( 'Remove', 'wpcalendarcats' ); ?>" title="<?php esc_attr_e( 'Remove', 'wpcalendarcats' ); ?>">✕</button>
 					<?php endif; ?>
 					<button type="button" class="button-link wpcc-toggle" aria-expanded="false"><?php esc_html_e( 'Edit', 'wpcalendarcats' ); ?></button>
 				</span>
@@ -442,7 +497,7 @@ abc123@group.calendar.google.com | Ward Events</pre>
 					</label>
 					<label>
 						<?php esc_html_e( 'Key', 'wpcalendarcats' ); ?>
-						<input type="text" name="<?php echo esc_attr( $name ); ?>[key]" value="<?php echo esc_attr( $cat['key'] ); ?>" <?php echo $is_other ? 'readonly' : ''; ?> />
+						<input type="text" name="<?php echo esc_attr( $name ); ?>[key]" value="<?php echo esc_attr( $cat['key'] ); ?>" <?php wp_readonly( $is_other ); ?> />
 						<span class="description"><?php esc_html_e( 'Lowercase id used in shortcodes.', 'wpcalendarcats' ); ?></span>
 					</label>
 					<label>
@@ -451,7 +506,7 @@ abc123@group.calendar.google.com | Ward Events</pre>
 						<span class="description"><?php esc_html_e( 'An emoji, or an image URL.', 'wpcalendarcats' ); ?></span>
 					</label>
 					<label>
-						<?php esc_html_e( 'Colour', 'wpcalendarcats' ); ?>
+						<?php esc_html_e( 'Color', 'wpcalendarcats' ); ?>
 						<input type="text" name="<?php echo esc_attr( $name ); ?>[color]" value="<?php echo esc_attr( $cat['color'] ); ?>" class="wpcc-color-input" />
 					</label>
 					<label>
@@ -468,6 +523,7 @@ abc123@group.calendar.google.com | Ward Events</pre>
 					<p class="description">
 						<?php esc_html_e( 'Matched against the event title, case-insensitively, on whole words. Regular expressions are allowed, e.g.', 'wpcalendarcats' ); ?>
 						<code>ward.*office</code>.
+						<?php esc_html_e( 'Keep patterns simple: a badly written one can slow every request, and one that fails is skipped.', 'wpcalendarcats' ); ?>
 						<?php
 						if ( empty( $desc_kw ) ) {
 							esc_html_e( 'None of these are eligible for description matching — that needs plain multi-word phrases with no regex characters.', 'wpcalendarcats' );
@@ -503,7 +559,7 @@ abc123@group.calendar.google.com | Ward Events</pre>
 	public static function handle_save_categories() {
 		self::guard( 'wpcc_save_categories' );
 
-		$raw = isset( $_POST['wpcc_cats'] ) ? wp_unslash( $_POST['wpcc_cats'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$raw   = isset( $_POST['wpcc_cats'] ) ? wp_unslash( $_POST['wpcc_cats'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- Each field is sanitized in WPCC_Settings::save_categories().
 		$count = WPCC_Settings::save_categories( is_array( $raw ) ? $raw : array() );
 
 		add_settings_error(
@@ -520,6 +576,9 @@ abc123@group.calendar.google.com | Ward Events</pre>
 		self::redirect_back();
 	}
 
+	/**
+	 * Handle restoring the default categories.
+	 */
 	public static function handle_restore_categories() {
 		self::guard( 'wpcc_restore_categories' );
 		WPCC_Settings::restore_default_categories();
@@ -528,10 +587,13 @@ abc123@group.calendar.google.com | Ward Events</pre>
 		self::redirect_back();
 	}
 
+	/**
+	 * Handle importing categories from JSON.
+	 */
 	public static function handle_import_categories() {
 		self::guard( 'wpcc_import_categories' );
 
-		$json   = isset( $_POST['wpcc_json'] ) ? wp_unslash( $_POST['wpcc_json'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$json   = isset( $_POST['wpcc_json'] ) ? wp_unslash( $_POST['wpcc_json'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- Decoded as JSON, then sanitized in WPCC_Settings::save_categories().
 		$parsed = json_decode( (string) $json, true );
 
 		if ( ! is_array( $parsed ) || empty( $parsed ) ) {
@@ -558,15 +620,21 @@ abc123@group.calendar.google.com | Ward Events</pre>
 		self::redirect_back();
 	}
 
+	/**
+	 * Handle the "clear feed cache" button.
+	 */
 	public static function handle_flush_cache() {
 		self::guard( 'wpcc_flush_cache' );
 		WPCC_ICS::flush_cache();
 		add_settings_error( 'wpcalendarcats', 'wpcc_flushed', __( 'Feed cache cleared.', 'wpcalendarcats' ), 'success' );
 		set_transient( 'settings_errors', get_settings_errors(), 30 );
-		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_MAIN ) );
+		wp_safe_redirect( add_query_arg( 'settings-updated', 'true', admin_url( 'admin.php?page=' . self::PAGE_MAIN ) ) );
 		exit;
 	}
 
+	/**
+	 * Check capability and nonce for an admin action.
+	 */
 	protected static function guard( $action ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to do that.', 'wpcalendarcats' ) );
@@ -574,8 +642,12 @@ abc123@group.calendar.google.com | Ward Events</pre>
 		check_admin_referer( $action );
 	}
 
+	/**
+	 * Return to the Categories page.
+	 */
 	protected static function redirect_back() {
-		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_CATS ) );
+		// settings_errors() only reads the stored notices when this is present.
+		wp_safe_redirect( add_query_arg( 'settings-updated', 'true', admin_url( 'admin.php?page=' . self::PAGE_CATS ) ) );
 		exit;
 	}
 }

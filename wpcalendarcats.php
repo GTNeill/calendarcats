@@ -4,14 +4,13 @@
  * Plugin URI:        https://github.com/GTNeill/wpcalendarcats
  * Update URI:        https://github.com/GTNeill/wpcalendarcats
  * Description:       A self-contained community events calendar. Reads public iCalendar feeds directly, sorts events into keyword-driven categories, and renders them with a card view, a calendar grid, search and category filters — all via the [wpcalendarcats] shortcode. No external app or API key required.
- * Version:           2.2.0
+ * Version:           2.2.1
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            George Neill
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       wpcalendarcats
- * Domain Path:       /languages
  *
  * @package WPCalendarCats
  */
@@ -20,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'WPCC_VERSION', '2.2.0' );
+define( 'WPCC_VERSION', '2.2.1' );
 define( 'WPCC_FILE', __FILE__ );
 define( 'WPCC_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WPCC_URL', plugin_dir_url( __FILE__ ) );
@@ -43,8 +42,6 @@ if ( is_admin() ) {
  * Wire everything up.
  */
 function wpcc_bootstrap() {
-	load_plugin_textdomain( 'wpcalendarcats', false, dirname( plugin_basename( WPCC_FILE ) ) . '/languages' );
-
 	WPCC_REST::init();
 	WPCC_Shortcode::init();
 	// Not gated behind is_admin(): update checks also run from wp-cron.

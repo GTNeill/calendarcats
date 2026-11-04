@@ -20,6 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Non-iCalendar sources: Squarespace, RSS and built-in schedules.
+ */
 class WPCC_Connectors {
 
 	const FARMERS_MARKET_NAME     = 'Chicago Farmers Markets (60625)';
@@ -28,7 +31,8 @@ class WPCC_Connectors {
 	/** Squarespace paginates past events 30 at a time; never crawl further than this. */
 	const MAX_PAST_PAGES = 6;
 
-	/* ─────────────────────────────────────────────────────────────────────
+	/*
+	─────────────────────────────────────────────────────────────────────
 	 * HTTP
 	 * ────────────────────────────────────────────────────────────────── */
 
@@ -43,18 +47,21 @@ class WPCC_Connectors {
 	 * @return array{body:string,type:string}|WP_Error
 	 */
 	protected static function http_get( $url, $accept ) {
-		$key    = 'wpcc_ics_x_' . md5( $url );
+		$key    = 'wpcc_ics_x_' . WPCC_ICS::cache_version() . '_' . md5( $url );
 		$cached = get_transient( $key );
 		if ( is_array( $cached ) ) {
 			return $cached;
 		}
 
-		$response = wp_remote_get(
+		// The safe variant refuses localhost, private/reserved IPs and unusual
+		// ports, so a feed URL can't be pointed at the site's own network.
+		$response = wp_safe_remote_get(
 			$url,
 			array(
-				'timeout'    => 20,
-				'user-agent' => 'WPCalendarCats/' . WPCC_VERSION . '; ' . home_url( '/' ),
-				'headers'    => array( 'Accept' => $accept ),
+				'timeout'             => 20,
+				'limit_response_size' => WPCC_ICS::MAX_FEED_BYTES,
+				'user-agent'          => 'WPCalendarCats/' . WPCC_VERSION . '; ' . home_url( '/' ),
+				'headers'             => array( 'Accept' => $accept ),
 			)
 		);
 		if ( is_wp_error( $response ) ) {
@@ -63,17 +70,24 @@ class WPCC_Connectors {
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $code ) {
-			return new WP_Error( 'wpcc_http', sprintf( 'HTTP %d fetching the feed', $code ) );
+			/* translators: %d: HTTP status code */
+			return new WP_Error( 'wpcc_http', sprintf( __( 'HTTP %d fetching the feed', 'wpcalendarcats' ), $code ) );
 		}
 
 		$out = array(
 			'body' => (string) wp_remote_retrieve_body( $response ),
 			'type' => (string) wp_remote_retrieve_header( $response, 'content-type' ),
 		);
-		set_transient( $key, $out, WPCC_Settings::get_cache_seconds() );
+		// Very large bodies would bloat the options table; fetch them again instead.
+		if ( strlen( $out['body'] ) <= WPCC_ICS::MAX_CACHED_BYTES ) {
+			set_transient( $key, $out, WPCC_Settings::get_cache_seconds() );
+		}
 		return $out;
 	}
 
+	/**
+	 * The scheme://host[:port] of a URL.
+	 */
 	protected static function origin_of( $url ) {
 		$parts = wp_parse_url( $url );
 		if ( empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
@@ -94,7 +108,8 @@ class WPCC_Connectors {
 		return trim( $html );
 	}
 
-	/* ─────────────────────────────────────────────────────────────────────
+	/*
+	─────────────────────────────────────────────────────────────────────
 	 * Squarespace
 	 *
 	 * Event collections expose no .ics, but /events?format=json returns
@@ -199,6 +214,11 @@ class WPCC_Connectors {
 				break;
 			}
 			$next = 0 === strpos( $pg['nextPageUrl'], 'http' ) ? $pg['nextPageUrl'] : $origin . $pg['nextPageUrl'];
+			// The cursor comes from remote JSON, so never follow it off the
+			// site we were asked to read.
+			if ( self::origin_of( $next ) !== $origin ) {
+				break;
+			}
 			$page = self::squarespace_page( add_query_arg( 'format', 'json', $next ) );
 			if ( is_wp_error( $page ) ) {
 				break; // Older history is a bonus; keep what we have.
@@ -210,6 +230,9 @@ class WPCC_Connectors {
 		return $out;
 	}
 
+	/**
+	 * Fetch and decode one Squarespace JSON page.
+	 */
 	protected static function squarespace_page( $url ) {
 		$res = self::http_get( $url, 'application/json' );
 		if ( is_wp_error( $res ) ) {
@@ -219,11 +242,15 @@ class WPCC_Connectors {
 		if ( ! is_array( $data ) ) {
 			// Squarespace answers with the rendered HTML page when the path
 			// isn't an events collection.
-			return new WP_Error( 'wpcc_not_sqsp', sprintf( 'Expected JSON, got "%s" — is that URL a Squarespace events collection?', $res['type'] ) );
+			/* translators: %s: content type returned */
+			return new WP_Error( 'wpcc_not_sqsp', sprintf( __( 'Expected JSON, got "%s" — is that URL a Squarespace events collection?', 'wpcalendarcats' ), $res['type'] ) );
 		}
 		return $data;
 	}
 
+	/**
+	 * Build a one-line location from a Squarespace item.
+	 */
 	protected static function squarespace_location( $loc ) {
 		if ( ! is_array( $loc ) ) {
 			return '';
@@ -237,7 +264,8 @@ class WPCC_Connectors {
 		return implode( ', ', $bits );
 	}
 
-	/* ─────────────────────────────────────────────────────────────────────
+	/*
+	─────────────────────────────────────────────────────────────────────
 	 * Events RSS (Wild Apricot and friends)
 	 *
 	 * pubDate is the event START in UTC, not a publication date, and the
@@ -322,6 +350,9 @@ class WPCC_Connectors {
 		return $items;
 	}
 
+	/**
+	 * Text of the first matching tag in an RSS item.
+	 */
 	protected static function rss_tag( $block, $name ) {
 		if ( ! preg_match( '#<' . $name . '(?:\s[^>]*)?>(.*?)</' . $name . '>#is', $block, $m ) ) {
 			return '';
@@ -342,13 +373,32 @@ class WPCC_Connectors {
 	 */
 	public static function parse_title_date( $title ) {
 		if ( ! preg_match( '/\s*\((?:[A-Za-z]+,\s*)?([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})\)\s*$/', $title, $m, PREG_OFFSET_CAPTURE ) ) {
-			return array( 'clean' => trim( $title ), 'date' => '' );
+			return array(
+				'clean' => trim( $title ),
+				'date'  => '',
+			);
 		}
-		$months = array( 'january' => 1, 'february' => 2, 'march' => 3, 'april' => 4, 'may' => 5, 'june' => 6, 'july' => 7, 'august' => 8, 'september' => 9, 'october' => 10, 'november' => 11, 'december' => 12 );
+		$months = array(
+			'january'   => 1,
+			'february'  => 2,
+			'march'     => 3,
+			'april'     => 4,
+			'may'       => 5,
+			'june'      => 6,
+			'july'      => 7,
+			'august'    => 8,
+			'september' => 9,
+			'october'   => 10,
+			'november'  => 11,
+			'december'  => 12,
+		);
 		$month  = isset( $months[ strtolower( $m[1][0] ) ] ) ? $months[ strtolower( $m[1][0] ) ] : 0;
 		$day    = (int) $m[2][0];
 		if ( ! $month || $day < 1 || $day > 31 ) {
-			return array( 'clean' => trim( $title ), 'date' => '' );
+			return array(
+				'clean' => trim( $title ),
+				'date'  => '',
+			);
 		}
 		return array(
 			'clean' => trim( substr( $title, 0, $m[0][1] ) ),
@@ -412,7 +462,8 @@ class WPCC_Connectors {
 		);
 	}
 
-	/* ─────────────────────────────────────────────────────────────────────
+	/*
+	─────────────────────────────────────────────────────────────────────
 	 * Chicago farmers markets (zip 60625)
 	 *
 	 * DCASE publishes the season schedule only as a flat HTML page, so this
@@ -440,6 +491,9 @@ class WPCC_Connectors {
 		return WPCC_ICS::parse( $ics, $feed['name'], $range_start, $range_end );
 	}
 
+	/**
+	 * The built-in farmers-market schedule as iCalendar text.
+	 */
 	protected static function farmers_market_ics() {
 		return <<<'ICS'
 BEGIN:VCALENDAR

@@ -20,6 +20,7 @@ function wpcc_uninstall_site() {
 
 	delete_option( 'wpcalendarcats_settings' );
 	delete_option( 'wpcalendarcats_categories' );
+	delete_option( 'wpcc_cache_ver' );
 
 	// Transient names are hashed per feed, so they have to be matched by prefix.
 	$wpdb->query(

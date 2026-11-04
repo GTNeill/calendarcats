@@ -610,6 +610,8 @@
 
 		var openPopup = null;
 		var openAbout = null;
+		var openTrigger = null;
+		var liveEl = null;
 		var aboutReturnFocus = null;
 		var hoverTimer = null;
 		var hideTimer = null;
@@ -641,6 +643,62 @@
 			// badge), where a hardcoded white sat as low as 3.54 on the greens
 			// and greys.
 			node.style.setProperty( '--wpcc-cat-fg', inkOn( value, 4.5 ) );
+		}
+
+		/** Visually hidden hint appended to links that open a new tab. */
+		function newTabText() {
+			return '<span class="wpcc-sr-only"> (' + escapeHtml( strings.newTab || 'opens in a new tab' ) + ')</span>';
+		}
+
+		/**
+		 * Announce a message to screen readers through a persistent live region.
+		 * It sits outside root because render() wipes everything inside it.
+		 */
+		function announce( message ) {
+			if ( ! liveEl ) {
+				liveEl = el( 'div', 'wpcc-sr-only' );
+				liveEl.setAttribute( 'role', 'status' );
+				liveEl.setAttribute( 'aria-live', 'polite' );
+				liveEl.setAttribute( 'aria-atomic', 'true' );
+				root.parentNode.insertBefore( liveEl, root );
+			}
+			if ( liveEl.textContent === message ) {
+				liveEl.textContent = '';
+			}
+			// Set on the next tick so repeated identical messages still fire.
+			setTimeout( function () {
+				liveEl.textContent = message;
+			}, 50 );
+		}
+
+		/**
+		 * Identify the focused control well enough to find its replacement after
+		 * render() rebuilds the DOM. State classes are ignored because they change
+		 * on the very click that moved focus.
+		 */
+		function focusKey( node ) {
+			if ( ! node || ! root.contains( node ) || node === root ) {
+				return null;
+			}
+			return [
+				node.tagName,
+				( node.className || '' ).toString().replace( /\bis-[\w-]+/g, '' ).replace( /\s+/g, ' ' ).trim(),
+				node.getAttribute( 'aria-label' ) || node.getAttribute( 'title' ) || '',
+				node.tagName === 'INPUT' ? '' : ( node.textContent || '' ).trim()
+			].join( '|' );
+		}
+
+		function restoreFocusTo( key ) {
+			if ( ! key ) {
+				return;
+			}
+			var nodes = root.querySelectorAll( 'button, input, select, a[href], [tabindex]' );
+			for ( var i = 0; i < nodes.length; i++ ) {
+				if ( focusKey( nodes[ i ] ) === key ) {
+					nodes[ i ].focus( { preventScroll: true } );
+					return;
+				}
+			}
 		}
 
 		function isTouch() {
@@ -679,6 +737,7 @@
 					state.data = payload;
 					state.fetchedAt = new Date().toISOString();
 					state.loading = false;
+					state.loadingAnnounced = false;
 					render();
 				} )
 				.catch( function ( err ) {
@@ -686,6 +745,7 @@
 						return;
 					}
 					state.loading = false;
+					state.loadingAnnounced = false;
 					state.error = err.message || String( err );
 					render();
 				} );
@@ -721,15 +781,23 @@
 
 		/* ── Popup ─────────────────────────────────────────────────────── */
 
-		function closePopup() {
+		function closePopup( restoreFocus ) {
+			var hadFocus = openPopup && openPopup.contains( document.activeElement );
 			if ( openPopup && openPopup.parentNode ) {
 				openPopup.parentNode.removeChild( openPopup );
 			}
 			openPopup = null;
+			// Keyboard users opened this from a specific row or chip, so put
+			// them back there. The trigger is gone if the view re-rendered.
+			if ( restoreFocus && hadFocus && openTrigger && openTrigger.isConnected ) {
+				openTrigger.focus();
+			}
+			openTrigger = null;
 		}
 
-		function showPopup( ev, anchorEl ) {
+		function showPopup( ev, anchorEl, focusIn ) {
 			closePopup();
+			openTrigger = anchorEl;
 
 			var color = ev.categoryColor;
 			var timeStr = ev.isAllDay
@@ -740,6 +808,9 @@
 			// The popup lives on <body> (so no theme wrapper can clip it), which
 			// means it has to carry the theme class and accent vars itself.
 			var popup = el( 'div', 'wpcc-popup wpcc-theme-' + state.theme );
+			popup.setAttribute( 'role', 'dialog' );
+			popup.setAttribute( 'aria-label', ev.title || ( strings.eventDetails || 'Event details' ) );
+			popup.tabIndex = -1;
 			setCat( popup, color );
 			popup.style.setProperty( '--wpcc-accent', config.accent || '#147671' );
 			popup.style.setProperty( '--wpcc-highlight', config.highlight || '#CF2C28' );
@@ -752,7 +823,7 @@
 				'</div>' +
 				'<div class="wpcc-popup-body">' +
 					'<div class="wpcc-popup-row">' +
-						'<span class="wpcc-popup-ico">🕒</span>' +
+						'<span class="wpcc-popup-ico" aria-hidden="true">🕒</span>' +
 						'<div><div class="wpcc-popup-date">' +
 							escapeHtml( eventDateText( ev, locale ) ) +
 						'</div><div class="wpcc-popup-time">' + escapeHtml( timeStr ) +
@@ -761,39 +832,60 @@
 					'</div>';
 
 			if ( ev.location ) {
-				html += '<div class="wpcc-popup-row"><span class="wpcc-popup-ico">📍</span>' +
+				html += '<div class="wpcc-popup-row"><span class="wpcc-popup-ico" aria-hidden="true">📍</span>' +
 					'<div class="wpcc-popup-muted"><a href="https://www.google.com/maps/search/?api=1&query=' +
 					encodeURIComponent( ev.location ) + '" target="_blank" rel="noopener noreferrer">' +
-					escapeHtml( ev.location ) + '</a></div></div>';
+					escapeHtml( ev.location ) + newTabText() + '</a></div></div>';
 			}
 			if ( ev.description ) {
-				html += '<div class="wpcc-popup-row"><span class="wpcc-popup-ico">📝</span>' +
+				html += '<div class="wpcc-popup-row"><span class="wpcc-popup-ico" aria-hidden="true">📝</span>' +
 					'<div class="wpcc-popup-desc">' + linkify( ev.description ) + '</div></div>';
 			}
 			if ( ev.organizer ) {
-				html += '<div class="wpcc-popup-row"><span class="wpcc-popup-ico">👤</span>' +
+				html += '<div class="wpcc-popup-row"><span class="wpcc-popup-ico" aria-hidden="true">👤</span>' +
 					'<div class="wpcc-popup-muted">' + escapeHtml( ev.organizer ) + '</div></div>';
 			}
 			var alsoPopup = alsoListedBy( ev );
 			if ( alsoPopup ) {
-				html += '<div class="wpcc-popup-row"><span class="wpcc-popup-ico">🔗</span>' +
+				html += '<div class="wpcc-popup-row"><span class="wpcc-popup-ico" aria-hidden="true">🔗</span>' +
 					'<div class="wpcc-popup-muted">' + escapeHtml( alsoPopup ) + '</div></div>';
 			}
 
 			html += '<div class="wpcc-popup-sep"></div>';
 			if ( ev.htmlLink ) {
-				html += '<a class="wpcc-popup-link" href="' + escapeHtml( ev.htmlLink ) + '" target="_blank" rel="noopener noreferrer">↗ ' +
-					escapeHtml( strings.openSource || 'Open source event' ) + '</a>';
+				html += '<a class="wpcc-popup-link" href="' + escapeHtml( ev.htmlLink ) + '" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span> ' +
+					escapeHtml( strings.openSource || 'Open source event' ) + newTabText() + '</a>';
 			}
 			html += '<a class="wpcc-popup-link" href="' + escapeHtml( addToCalendarUrl( ev, config.timezone ) ) +
-				'" target="_blank" rel="noopener noreferrer">📅 ' + escapeHtml( strings.addToCalendar || 'Add to my calendar' ) + '</a>';
+				'" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">📅</span> ' + escapeHtml( strings.addToCalendar || 'Add to my calendar' ) + newTabText() + '</a>';
 			html += '</div>';
 
 			popup.innerHTML = html;
 
 			popup.querySelector( '.wpcc-popup-close' ).addEventListener( 'click', function ( e ) {
 				e.stopPropagation();
-				closePopup();
+				closePopup( true );
+			} );
+			// Keep Tab inside the dialog while it has focus: it lives at the end
+			// of <body>, so an unguarded Tab would leave the page entirely.
+			popup.addEventListener( 'keydown', function ( e ) {
+				if ( 'Tab' !== e.key ) {
+					return;
+				}
+				var items = focusables( popup );
+				if ( ! items.length ) {
+					e.preventDefault();
+					return;
+				}
+				var first = items[ 0 ];
+				var last = items[ items.length - 1 ];
+				if ( e.shiftKey && ( document.activeElement === first || document.activeElement === popup ) ) {
+					e.preventDefault();
+					last.focus();
+				} else if ( ! e.shiftKey && document.activeElement === last ) {
+					e.preventDefault();
+					first.focus();
+				}
 			} );
 			popup.addEventListener( 'mouseenter', function () {
 				clearTimeout( hideTimer );
@@ -807,6 +899,9 @@
 			document.body.appendChild( popup );
 			openPopup = popup;
 			position( popup, anchorEl );
+			if ( focusIn ) {
+				popup.focus();
+			}
 		}
 
 		function position( popup, anchorEl ) {
@@ -864,10 +959,10 @@
 				}
 				e.preventDefault();
 				if ( openPopup ) {
-					closePopup();
+					closePopup( true );
 					return;
 				}
-				showPopup( ev, node );
+				showPopup( ev, node, true );
 			} );
 		}
 
@@ -939,7 +1034,7 @@
 					html += '<li><span class="wpcc-about-name">' + escapeHtml( src.name ) + '</span>';
 					if ( src.link && /^https?:\/\//i.test( src.link ) ) {
 						html += '<a href="' + escapeHtml( src.link ) + '" target="_blank" rel="noopener noreferrer">' +
-							escapeHtml( strings.visitSite || 'Visit site' ) + ' ↗</a>';
+							escapeHtml( strings.visitSite || 'Visit site' ) + ' <span aria-hidden="true">↗</span>' + newTabText() + '</a>';
 					}
 					html += '</li>';
 				} );
@@ -1002,6 +1097,7 @@
 
 		function render() {
 			var scrollY = window.scrollY;
+			var focusedKey = focusKey( document.activeElement );
 			closePopup();
 			root.className = 'wpcc-app wpcc-theme-' + state.theme;
 			root.innerHTML = '';
@@ -1027,6 +1123,10 @@
 
 			if ( state.loading ) {
 				body.appendChild( el( 'div', 'wpcc-loading', '<span class="wpcc-spinner" aria-hidden="true"></span>' ) );
+				if ( ! state.loadingAnnounced ) {
+					state.loadingAnnounced = true;
+					announce( strings.loading || 'Loading events…' );
+				}
 			} else if ( state.search.trim() ) {
 				body.appendChild( renderSearchResults() );
 			} else if ( 'cards' === state.view ) {
@@ -1035,6 +1135,7 @@
 				body.appendChild( renderGrid() );
 			}
 
+			restoreFocusTo( focusedKey );
 			window.scrollTo( window.scrollX, scrollY );
 			sizeCardLists();
 		}
@@ -1318,6 +1419,7 @@
 
 		function renderError() {
 			var box = el( 'div', 'wpcc-error' );
+			box.setAttribute( 'role', 'alert' );
 			box.innerHTML = '<strong>' + escapeHtml( strings.loadFailed || 'Failed to load events' ) + '</strong>' +
 				'<span>' + escapeHtml( state.error ) + '</span>';
 			box.appendChild( button( escapeHtml( strings.retry || 'Retry' ), null, 'wpcc-retry', function () {
@@ -1339,7 +1441,10 @@
 			input.type = 'search';
 			input.value = state.search;
 			input.placeholder = strings.searchPlaceholder || 'Search events in this view…';
-			input.setAttribute( 'aria-label', input.placeholder );
+			input.id = 'wpcc-search-' + ( root.id || 'x' );
+			var label = el( 'label', 'wpcc-sr-only', escapeHtml( strings.searchLabel || 'Search events' ) );
+			label.setAttribute( 'for', input.id );
+			wrap.appendChild( label );
 
 			var debounce = null;
 			input.addEventListener( 'input', function () {
@@ -1608,28 +1713,30 @@
 			var lastText = fmt( last, { month: 'short', day: 'numeric' }, locale );
 			var dur = fmtDuration( ev.start, ev.end, ev.isAllDay );
 
-			var row = el( 'div', 'wpcc-row' );
+			var row = el( 'button', 'wpcc-row' );
+			row.type = 'button';
+			row.setAttribute( 'aria-haspopup', 'dialog' );
 			setCat( row, color );
 
-			var html = '<div class="wpcc-row-date">' +
+			var html = '<span class="wpcc-row-date">' +
 					'<span class="wpcc-row-dow">' + escapeHtml( fmt( start, { weekday: 'short' }, locale ) ) + '</span>' +
 					'<span class="wpcc-row-day">' + start.getDate() + '</span>' +
 					'<span class="wpcc-row-mon">' + escapeHtml( fmt( start, { month: 'short' }, locale ) ) + '</span>' +
 					( multi ? '<span class="wpcc-row-end"><span class="wpcc-sr-only">' + escapeHtml( strings.through || 'through' ) + ' </span>→ ' + escapeHtml( lastText ) + '</span>' : '' ) +
-				'</div>' +
-				'<div class="wpcc-row-info">' +
-					'<div class="wpcc-row-title">' + escapeHtml( ev.title ) +
+				'</span>' +
+				'<span class="wpcc-row-info">' +
+					'<span class="wpcc-row-title">' + escapeHtml( ev.title ) +
 					( today ? ' <span class="wpcc-today-badge">' + escapeHtml( strings.today || 'Today' ) + '</span>' : '' ) +
-					'</div>' +
-					'<div class="wpcc-row-time">🕒 ' + escapeHtml( fmtTime( ev.start, ev.isAllDay, strings.allDay, locale ) ) +
+					'</span>' +
+					'<span class="wpcc-row-time"><span aria-hidden="true">🕒</span> ' + escapeHtml( fmtTime( ev.start, ev.isAllDay, strings.allDay, locale ) ) +
 					( ev.end && ! ev.isAllDay ? ' – ' + escapeHtml( fmtTime( ev.end, false, strings.allDay, locale ) ) : '' ) +
 					( dur ? ' <span class="wpcc-chip-dur">' + escapeHtml( dur ) + '</span>' : '' ) +
-					'</div>';
+					'</span>';
 
 			if ( ev.location ) {
-				html += '<div class="wpcc-row-loc">📍 ' + escapeHtml( ev.location ) + '</div>';
+				html += '<span class="wpcc-row-loc"><span aria-hidden="true">📍</span> ' + escapeHtml( ev.location ) + '</span>';
 			}
-			html += '</div>';
+			html += '</span>';
 
 			row.innerHTML = html;
 			bindPopup( row, ev );
@@ -1800,7 +1907,9 @@
 			// Multi-day events render on every day they span; any day after the
 			// start is a continuation.
 			var cont = !! date && ! isSameDay( parseLocal( ev.start ), date );
-			var chip = el( 'div', 'wpcc-chip' + ( cont ? ' is-cont' : '' ) );
+			var chip = el( 'button', 'wpcc-chip' + ( cont ? ' is-cont' : '' ) );
+			chip.type = 'button';
+			chip.setAttribute( 'aria-haspopup', 'dialog' );
 			setCat( chip, ev.categoryColor );
 
 			var time = '';
@@ -1836,9 +1945,9 @@
 			var wrap = el( 'div' );
 
 			if ( ! matches.length ) {
-				wrap.appendChild( el( 'div', 'wpcc-search-count',
-					escapeHtml( ( strings.searchNoneOne || 'No events match "%s" in the current view.' ).replace( '%s', state.search ) )
-				) );
+				var none = ( strings.searchNoneOne || 'No events match "%s" in the current view.' ).replace( '%s', state.search );
+				wrap.appendChild( el( 'div', 'wpcc-search-count', escapeHtml( none ) ) );
+				announce( none );
 				wrap.appendChild( el( 'div', 'wpcc-empty', escapeHtml( strings.searchHint || '' ) ) );
 				return wrap;
 			}
@@ -1847,6 +1956,7 @@
 				.replace( '%1$d', matches.length )
 				.replace( '%2$s', state.search );
 			wrap.appendChild( el( 'div', 'wpcc-search-count', escapeHtml( count ) ) );
+			announce( count );
 
 			var list = el( 'div', 'wpcc-search-list' );
 			matches.forEach( function ( ev ) {
@@ -1870,8 +1980,8 @@
 				'<div class="wpcc-detail-title">' + escapeHtml( ev.title ) + '</div>';
 
 			if ( ev.location ) {
-				html += '<div class="wpcc-detail-loc">📍 <a href="https://www.google.com/maps/search/?api=1&query=' +
-					encodeURIComponent( ev.location ) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml( ev.location ) + '</a></div>';
+				html += '<div class="wpcc-detail-loc"><span aria-hidden="true">📍</span> <a href="https://www.google.com/maps/search/?api=1&query=' +
+					encodeURIComponent( ev.location ) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml( ev.location ) + newTabText() + '</a></div>';
 			}
 			if ( ev.description ) {
 				html += '<div class="wpcc-detail-desc">' + linkify( ev.description ) + '</div>';
@@ -1883,11 +1993,11 @@
 
 			html += '<div class="wpcc-detail-links">';
 			if ( ev.htmlLink ) {
-				html += '<a href="' + escapeHtml( ev.htmlLink ) + '" target="_blank" rel="noopener noreferrer">↗ ' +
-					escapeHtml( strings.openSource || 'Open source event' ) + '</a>';
+				html += '<a href="' + escapeHtml( ev.htmlLink ) + '" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span> ' +
+					escapeHtml( strings.openSource || 'Open source event' ) + newTabText() + '</a>';
 			}
-			html += '<a href="' + escapeHtml( addToCalendarUrl( ev, config.timezone ) ) + '" target="_blank" rel="noopener noreferrer">📅 ' +
-				escapeHtml( strings.addToCalendar || 'Add to my calendar' ) + '</a></div>';
+			html += '<a href="' + escapeHtml( addToCalendarUrl( ev, config.timezone ) ) + '" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">📅</span> ' +
+				escapeHtml( strings.addToCalendar || 'Add to my calendar' ) + newTabText() + '</a></div>';
 
 			card.innerHTML = html;
 			return card;
@@ -1907,7 +2017,7 @@
 
 		document.addEventListener( 'keydown', function ( e ) {
 			if ( 'Escape' === e.key && openPopup ) {
-				closePopup();
+				closePopup( true );
 			}
 		} );
 

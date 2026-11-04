@@ -26,6 +26,36 @@
 		} );
 	}
 
+	var idCounter = 0;
+
+	/**
+	 * Give a row what assistive tech needs: the move/remove buttons name the
+	 * category they act on, and Edit points at the panel it opens.
+	 */
+	function decorate( row ) {
+		var name = ( ( row.querySelector( '.wpcc-cat-title' ) || {} ).textContent || '' ).trim();
+		[ '.wpcc-move-up', '.wpcc-move-down', '.wpcc-remove' ].forEach( function ( sel ) {
+			var btn = row.querySelector( sel );
+			if ( ! btn ) {
+				return;
+			}
+			if ( ! btn.hasAttribute( 'data-base-label' ) ) {
+				btn.setAttribute( 'data-base-label', btn.getAttribute( 'aria-label' ) || btn.title || '' );
+			}
+			btn.setAttribute( 'aria-label', btn.getAttribute( 'data-base-label' ) + ( name ? ': ' + name : '' ) );
+		} );
+
+		var body = row.querySelector( '.wpcc-cat-body' );
+		var toggle = row.querySelector( '.wpcc-toggle' );
+		if ( body && toggle ) {
+			if ( ! body.id ) {
+				idCounter += 1;
+				body.id = 'wpcc-cat-body-' + idCounter;
+			}
+			toggle.setAttribute( 'aria-controls', body.id );
+		}
+	}
+
 	function toggleBody( row, force ) {
 		var body = row.querySelector( '.wpcc-cat-body' );
 		var btn = row.querySelector( '.wpcc-toggle' );
@@ -61,6 +91,11 @@
 		}
 		reindex();
 		row.scrollIntoView( { block: 'nearest' } );
+		// The buttons move with the row; keep focus on the one just pressed.
+		var active = document.activeElement;
+		if ( active && active.focus && row.contains( active ) ) {
+			active.focus();
+		}
 	}
 
 	function addRow() {
@@ -76,6 +111,7 @@
 		}
 		rows.appendChild( row );
 		reindex();
+		decorate( row );
 		toggleBody( row, true );
 
 		var first = row.querySelector( '.wpcc-label-input' );
@@ -113,7 +149,8 @@
 		} else if ( button.classList.contains( 'wpcc-remove' ) ) {
 			e.preventDefault();
 			var label = ( row.querySelector( '.wpcc-cat-title' ) || {} ).textContent || '';
-			if ( window.confirm( 'Remove "' + label.trim() + '"? Its events will fall through to the catch-all category.' ) ) {
+			var message = ( window.wpccAdmin && window.wpccAdmin.confirmRemove ) || 'Remove "%s"?';
+			if ( window.confirm( message.replace( '%s', label.trim() ) ) ) {
 				row.parentNode.removeChild( row );
 				reindex();
 			}
@@ -131,7 +168,8 @@
 		if ( field.classList.contains( 'wpcc-label-input' ) ) {
 			var title = row.querySelector( '.wpcc-cat-title' );
 			if ( title ) {
-				title.textContent = field.value.trim() || 'New category';
+				title.textContent = field.value.trim() || ( ( window.wpccAdmin && window.wpccAdmin.newCategory ) || 'New category' );
+				decorate( row );
 			}
 		} else if ( field.classList.contains( 'wpcc-color-input' ) ) {
 			var swatch = row.querySelector( '.wpcc-cat-swatch' );
@@ -163,6 +201,7 @@
 		document.addEventListener( 'click', onClick );
 		document.addEventListener( 'input', onInput );
 
+		catRows().forEach( decorate );
 		reindex();
 	}
 

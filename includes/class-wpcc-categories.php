@@ -14,6 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Assigns events to categories by keyword.
+ */
 class WPCC_Categories {
 
 	/** @var array|null Compiled matcher cache for the current request. */

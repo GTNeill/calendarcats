@@ -176,7 +176,7 @@ class WPCC_Updater {
 			array(
 				'timeout' => 10,
 				'headers' => array(
-					'Accept' => 'application/vnd.github+json',
+					'Accept'     => 'application/vnd.github+json',
 					// GitHub rejects requests without a User-Agent.
 					'User-Agent' => 'WPCalendarCats/' . WPCC_VERSION . '; ' . home_url( '/' ),
 				),
@@ -304,24 +304,24 @@ class WPCC_Updater {
 		$text = preg_replace( '/`([^`]+)`/', '<code>$1</code>', $text );
 		$text = preg_replace( '/\*\*([^*]+)\*\*/', '<strong>$1</strong>', $text );
 
-		$out    = '';
-		$inList = false;
+		$out     = '';
+		$in_list = false;
 
 		foreach ( preg_split( '/\R/', $text ) as $line ) {
 			$line = rtrim( $line );
 
 			if ( preg_match( '/^\s*[*-]\s+(.*)$/', $line, $m ) ) {
-				if ( ! $inList ) {
-					$out   .= '<ul>';
-					$inList = true;
+				if ( ! $in_list ) {
+					$out    .= '<ul>';
+					$in_list = true;
 				}
 				$out .= '<li>' . $m[1] . '</li>';
 				continue;
 			}
 
-			if ( $inList ) {
-				$out   .= '</ul>';
-				$inList = false;
+			if ( $in_list ) {
+				$out    .= '</ul>';
+				$in_list = false;
 			}
 
 			if ( preg_match( '/^(#{1,6})\s+(.*)$/', $line, $m ) ) {
@@ -335,7 +335,7 @@ class WPCC_Updater {
 			}
 		}
 
-		if ( $inList ) {
+		if ( $in_list ) {
 			$out .= '</ul>';
 		}
 

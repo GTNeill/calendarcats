@@ -4,7 +4,7 @@ Tags: calendar, events, ical, ics, google calendar, community, squarespace, rss
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -120,6 +120,9 @@ Every class is prefixed `wpcc-`, and the palette runs through CSS custom propert
 
 == Upgrade Notice ==
 
+= 2.2.1 =
+Accessibility, security and speed fixes from a code review: events open from the keyboard, the popup is a proper dialog, feed fetching is hardened against private addresses and oversized responses, and event windows are cached. No settings changes.
+
 = 2.2.0 =
 Adds multi-day events, a Today view, an opt-in remembered category filter, an About popup, Squarespace / RSS / farmers-market sources and cross-source de-duplication. Existing shortcodes and settings keep working; new options default to off.
 
@@ -127,6 +130,14 @@ Adds multi-day events, a Today view, an opt-in remembered category filter, an Ab
 Major rewrite: the plugin now renders the calendar itself instead of embedding an external app. Existing `[wpcalendarcats]` shortcodes keep working, and your old iframe URL is preserved — add `mode="iframe"` to any shortcode you want to keep as an embed.
 
 == Changelog ==
+
+= 2.2.1 =
+* **Keyboard access.** Events in the Cards and Calendar views are real buttons, so they can be reached with Tab and opened with Enter or Space. The event popup is now a labelled dialog: focus moves into it, Tab is kept inside, and Esc or Close returns focus to the event that opened it.
+* **Focus and announcements.** Keyboard focus is kept when the calendar re-renders (Next / Previous, category pills, Cards / Calendar). Loading, search result counts, "no results" and errors are announced to screen readers. The search box has a proper label, a visible focus ring, and animations respect reduced-motion.
+* **Safer feed fetching.** Feeds are fetched with `wp_safe_remote_get` (no localhost / private-network targets), responses are capped at 5 MB, and Squarespace paging can no longer be redirected to another host. The iframe `url` shortcode attribute is limited to the saved calendar's host.
+* **Faster.** Each date window is cached after parsing, so repeat visits skip feed parsing and recurrence expansion. Cache flushing is instant and works with an object cache. Logged-out REST responses carry a short `Cache-Control`. Saving unrelated settings no longer flushes the feed cache.
+* **Admin.** "Settings saved" and "Cache cleared" notices now show. Selects and group fields are labelled, the Show options are a fieldset, remove/move buttons name their category, and confirm prompts are translatable.
+* Code: WordPress coding-standards formatting, docblocks, specific `phpcs:ignore` rules, ICS alarm blocks no longer leak into event descriptions, and the unused text-domain loader was removed.
 
 = 2.2.0 =
 * **Multi-day events.** An event that spans several days now shows on every day it covers in the Calendar view, with a "▸ cont'd" chip after the first day. Card rows show "→ Mon D" under the date badge, an in-progress multi-day event stays in the current list instead of dropping to "Earlier this period", and the popup and search results show the full range ("Sep 25 – Sep 27"). All-day ends are handled as exclusive, per iCalendar, so a one-day all-day event is not stretched to two.

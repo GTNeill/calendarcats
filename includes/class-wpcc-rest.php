@@ -13,14 +13,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Public read-only REST routes.
+ */
 class WPCC_REST {
 
 	const NAMESPACE_V1 = 'wpcalendarcats/v1';
 
+	/**
+	 * Register hooks.
+	 */
 	public static function init() {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
 	}
 
+	/**
+	 * Register the REST routes.
+	 */
 	public static function register_routes() {
 		register_rest_route(
 			self::NAMESPACE_V1,
@@ -88,7 +97,7 @@ class WPCC_REST {
 			$grouped[ $event['category'] ][] = $event;
 		}
 
-		return new WP_REST_Response(
+		$response = new WP_REST_Response(
 			array(
 				'events'     => $result['events'],
 				'grouped'    => $grouped,
@@ -102,6 +111,14 @@ class WPCC_REST {
 			),
 			200
 		);
+
+		// Let browsers and CDNs reuse the answer for a short while. Skipped for
+		// logged-in users and for partial results, which shouldn't stick.
+		if ( ! is_user_logged_in() && empty( $result['errors'] ) ) {
+			$response->header( 'Cache-Control', 'public, max-age=' . min( 300, WPCC_Settings::get_cache_seconds() ) );
+		}
+
+		return $response;
 	}
 
 	/**
@@ -136,6 +153,9 @@ class WPCC_REST {
 		return $out;
 	}
 
+	/**
+	 * Categories shaped for the front end.
+	 */
 	protected static function category_payload() {
 		$out = array();
 		foreach ( WPCC_Settings::get_categories() as $cat ) {

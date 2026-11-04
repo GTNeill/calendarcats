@@ -23,6 +23,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Collapses the same event published by several sources.
+ */
 class WPCC_Dedupe {
 
 	/** Two events whose starts differ by more than this are separate sessions. */
@@ -202,7 +205,7 @@ class WPCC_Dedupe {
 		$t = preg_replace( '/\s*[-\x{2013}\x{2014}]?\s*\(?\s*(presented|hosted|sponsored|organized)\s+by\b[^)]*\)?\s*$/iu', '', $t );
 
 		// Leading "[Org]" / "Org:" tags.
-		$t = preg_replace( '/^\s*\[[^\]]{1,40}\]\s*/', '', $t );
+		$t    = preg_replace( '/^\s*\[[^\]]{1,40}\]\s*/', '', $t );
 		$half = strlen( $raw ) / 2;
 		$t    = preg_replace_callback(
 			'/^\s*[a-z0-9 .\'&-]{2,40}:\s+/',
@@ -292,6 +295,9 @@ class WPCC_Dedupe {
 		return ! array_diff( $short, $long ) ? 'subset' : 'none';
 	}
 
+	/**
+	 * The calendar day (Y-m-d) of an event start.
+	 */
 	protected static function day_of( $ev ) {
 		return isset( $ev['start'] ) ? substr( (string) $ev['start'], 0, 10 ) : '';
 	}
@@ -307,6 +313,9 @@ class WPCC_Dedupe {
 		return false === $t ? null : $t / 60;
 	}
 
+	/**
+	 * Score how much detail an event carries.
+	 */
 	protected static function richness( $ev ) {
 		$n = 0;
 		if ( '' !== trim( (string) $ev['description'] ) ) {
@@ -327,6 +336,9 @@ class WPCC_Dedupe {
 		return $n;
 	}
 
+	/**
+	 * Whether an event is marked cancelled.
+	 */
 	protected static function is_cancelled( $ev ) {
 		return 'CANCELLED' === strtoupper( isset( $ev['status'] ) ? (string) $ev['status'] : '' );
 	}

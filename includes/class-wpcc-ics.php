@@ -13,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Fetches and parses iCalendar feeds into shaped events.
+ */
 class WPCC_ICS {
 
 	/** Hard ceiling on generated occurrences per recurring event. */
@@ -20,6 +23,22 @@ class WPCC_ICS {
 
 	/** Hard ceiling on recurrence iterations, so a malformed rule can't hang a request. */
 	const MAX_ITERATIONS = 5000;
+
+	/** Largest feed body we will download. */
+	const MAX_FEED_BYTES = 5 * MB_IN_BYTES;
+
+	/** Largest body kept in a transient; bigger ones are refetched. */
+	const MAX_CACHED_BYTES = 2 * MB_IN_BYTES;
+
+	/**
+	 * Version stamped into every cache key. Bumping it invalidates the cache
+	 * in one write, which works the same with or without an object cache.
+	 *
+	 * @return string
+	 */
+	public static function cache_version() {
+		return (string) get_option( 'wpcc_cache_ver', '1' );
+	}
 
 	/**
 	 * Fetch every configured feed and return shaped events inside the window.
@@ -29,6 +48,35 @@ class WPCC_ICS {
 	 * @return array{events:array,errors:array,fetched_at:string}
 	 */
 	public static function get_events( $range_start, $range_end ) {
+		// Parsing and expanding recurrences is the expensive part, so keep the
+		// shaped result per window. Windows far from today aren't cached, so a
+		// crawler can't fill the options table with one-off entries.
+		$cacheable = abs( $range_start->getTimestamp() - time() ) < 2 * YEAR_IN_SECONDS;
+		$key       = 'wpcc_ics_ev_' . self::cache_version() . '_' . md5( $range_start->getTimestamp() . '|' . $range_end->getTimestamp() . '|' . wp_json_encode( array( WPCC_Settings::get_feeds(), WPCC_Settings::get_categories() ) ) );
+		if ( $cacheable ) {
+			$hit = get_transient( $key );
+			if ( is_array( $hit ) ) {
+				return $hit;
+			}
+		}
+
+		$result = self::build_events( $range_start, $range_end );
+
+		// Don't pin a partial result for the full TTL when a feed just failed.
+		if ( $cacheable && empty( $result['errors'] ) ) {
+			set_transient( $key, $result, WPCC_Settings::get_cache_seconds() );
+		}
+		return $result;
+	}
+
+	/**
+	 * Fetch and shape every feed (uncached).
+	 *
+	 * @param DateTimeInterface $range_start Window start.
+	 * @param DateTimeInterface $range_end   Window end.
+	 * @return array{events:array,errors:array,fetched_at:string}
+	 */
+	protected static function build_events( $range_start, $range_end ) {
 		$feeds  = WPCC_Settings::get_feeds();
 		$events = array();
 		$errors = array();
@@ -95,18 +143,21 @@ class WPCC_ICS {
 	 * @return string|WP_Error Raw iCalendar text.
 	 */
 	public static function fetch( $url ) {
-		$key    = 'wpcc_ics_' . md5( $url );
+		$key    = 'wpcc_ics_' . self::cache_version() . '_' . md5( $url );
 		$cached = get_transient( $key );
 		if ( false !== $cached ) {
 			return $cached;
 		}
 
-		$response = wp_remote_get(
+		// The safe variant refuses localhost, private/reserved IPs and unusual
+		// ports, so a feed URL can't be pointed at the site's own network.
+		$response = wp_safe_remote_get(
 			$url,
 			array(
-				'timeout'    => 20,
-				'user-agent' => 'WPCalendarCats/' . WPCC_VERSION . '; ' . home_url( '/' ),
-				'headers'    => array( 'Accept' => 'text/calendar, text/plain, */*' ),
+				'timeout'             => 20,
+				'limit_response_size' => self::MAX_FEED_BYTES,
+				'user-agent'          => 'WPCalendarCats/' . WPCC_VERSION . '; ' . home_url( '/' ),
+				'headers'             => array( 'Accept' => 'text/calendar, text/plain, */*' ),
 			)
 		);
 
@@ -116,30 +167,44 @@ class WPCC_ICS {
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $code ) {
-			return new WP_Error( 'wpcc_http', sprintf( 'HTTP %d fetching the feed', $code ) );
+			/* translators: %d: HTTP status code */
+			return new WP_Error( 'wpcc_http', sprintf( __( 'HTTP %d fetching the feed', 'wpcalendarcats' ), $code ) );
 		}
 
 		$body = wp_remote_retrieve_body( $response );
 		if ( '' === trim( $body ) || false === stripos( $body, 'BEGIN:VCALENDAR' ) ) {
-			return new WP_Error( 'wpcc_not_ics', 'The response was not an iCalendar feed.' );
+			return new WP_Error( 'wpcc_not_ics', __( 'The response was not an iCalendar feed.', 'wpcalendarcats' ) );
 		}
 
-		set_transient( $key, $body, WPCC_Settings::get_cache_seconds() );
+		// Very large bodies would bloat the options table; fetch them again instead.
+		if ( strlen( $body ) <= self::MAX_CACHED_BYTES ) {
+			set_transient( $key, $body, WPCC_Settings::get_cache_seconds() );
+		}
 		return $body;
 	}
 
 	/** Delete every cached feed body, so the next request refetches. */
 	public static function flush_cache() {
+		// New version = every old key is unreachable immediately, including
+		// when transients live in an object cache rather than the options table.
+		update_option( 'wpcc_cache_ver', (string) microtime( true ), false );
+
+		// Without an object cache the stale rows would linger until expiry, so
+		// tidy them too.
+		if ( wp_using_ext_object_cache() ) {
+			return;
+		}
 		global $wpdb;
 		$like = $wpdb->esc_like( '_transient_wpcc_ics_' ) . '%';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transients are in the options table here; no API lists them by prefix.
 		$names = $wpdb->get_col( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s", $like ) );
 		foreach ( (array) $names as $name ) {
 			delete_transient( str_replace( '_transient_', '', $name ) );
 		}
 	}
 
-	/* ─────────────────────────────────────────────────────────────────────
+	/*
+	─────────────────────────────────────────────────────────────────────
 	 * Parsing
 	 * ────────────────────────────────────────────────────────────────── */
 
@@ -315,6 +380,11 @@ class WPCC_ICS {
 
 	/** The whole raw property line, parameters included. */
 	protected static function raw_line( $block, $name ) {
+		// A VALARM carries its own DESCRIPTION / SUMMARY (the reminder text).
+		// Drop it so those can't be mistaken for the event's.
+		if ( false !== stripos( $block, 'BEGIN:VALARM' ) ) {
+			$block = preg_replace( '/^BEGIN:VALARM.*?^END:VALARM[^\r\n]*/msi', '', $block );
+		}
 		if ( preg_match( '/^' . preg_quote( $name, '/' ) . '[;:][^\r\n]*/mi', $block, $m ) ) {
 			return $m[0];
 		}
@@ -480,7 +550,8 @@ class WPCC_ICS {
 		return '';
 	}
 
-	/* ─────────────────────────────────────────────────────────────────────
+	/*
+	─────────────────────────────────────────────────────────────────────
 	 * Recurrence expansion
 	 *
 	 * PHP has no RRULE engine, so this implements the subset that real
@@ -507,7 +578,7 @@ class WPCC_ICS {
 			if ( false === strpos( $chunk, '=' ) ) {
 				continue;
 			}
-			list( $k, $v )              = explode( '=', $chunk, 2 );
+			list( $k, $v )             = explode( '=', $chunk, 2 );
 			$parts[ strtoupper( $k ) ] = strtoupper( trim( $v ) );
 		}
 
@@ -529,13 +600,13 @@ class WPCC_ICS {
 		$bymonthday = isset( $parts['BYMONTHDAY'] ) ? array_map( 'intval', explode( ',', $parts['BYMONTHDAY'] ) ) : array();
 		$byday      = isset( $parts['BYDAY'] ) ? self::parse_byday( $parts['BYDAY'] ) : array();
 
-		$results   = array();
-		$emitted   = 0;
-		$iterations = 0;
-		$window_end = $range_end->getTimestamp();
+		$results      = array();
+		$emitted      = 0;
+		$iterations   = 0;
+		$window_end   = $range_end->getTimestamp();
 		$window_start = $range_start->getTimestamp();
-		$time       = $dtstart->format( 'H:i:s' );
-		$zone       = $dtstart->getTimezone();
+		$time         = $dtstart->format( 'H:i:s' );
+		$zone         = $dtstart->getTimezone();
 
 		// Cursor walks period by period from DTSTART.
 		$cursor = $dtstart;
@@ -826,6 +897,9 @@ class WPCC_ICS {
 		return self::make( (int) $cursor->format( 'Y' ), $month, 1, '00:00:00', $zone );
 	}
 
+	/**
+	 * Whether a date falls on one of the BYDAY weekdays.
+	 */
 	protected static function matches_weekday( $date, $byday ) {
 		$dow = (int) $date->format( 'w' );
 		foreach ( $byday as $bd ) {
@@ -836,6 +910,9 @@ class WPCC_ICS {
 		return false;
 	}
 
+	/**
+	 * Whether a date matches BYMONTHDAY.
+	 */
 	protected static function matches_monthday( $date, $bymonthday ) {
 		$day       = (int) $date->format( 'j' );
 		$days_in_m = (int) $date->format( 't' );

@@ -9,11 +9,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Options storage and defaults.
+ */
 class WPCC_Settings {
 
-	const OPTION       = 'wpcalendarcats_settings';
-	const OPTION_CATS  = 'wpcalendarcats_categories';
-	const GROUP_LABELS = 'wpcalendarcats_group_labels';
+	const OPTION      = 'wpcalendarcats_settings';
+	const OPTION_CATS = 'wpcalendarcats_categories';
 
 	/** Google's public iCal URL template, used when a feed is given as a calendar id. */
 	const GCAL_ICAL = 'https://calendar.google.com/calendar/ical/%s/public/basic.ics';
@@ -26,33 +28,33 @@ class WPCC_Settings {
 	 */
 	public static function defaults() {
 		return array(
-			'feeds'            => "c_50dc8883383193a9f6ba4d86cd23a836978e1d42028f0e7bb263955d5539912c@group.calendar.google.com | 40th Ward Events\n"
+			'feeds'             => "c_50dc8883383193a9f6ba4d86cd23a836978e1d42028f0e7bb263955d5539912c@group.calendar.google.com | 40th Ward Events\n"
 				. 'c_05dba706bb25f28f63bfc0b821c9f8d5e29d9f2b105e78949388b675eb801572@group.calendar.google.com | 40th Ward Community',
 			// Extra source types. Blank by default so upgrading never adds
 			// calendars to an existing site; see the admin screen for examples.
 			'feeds_squarespace' => '',
-			'feeds_rss'        => '',
-			'farmers_markets'  => 0,
-			'accent'           => '#147671',
-			'highlight'        => '#CF2C28',
-			'default_view'     => 'cards',
-			'default_unit'     => 'month',
-			'default_theme'    => 'light',
+			'feeds_rss'         => '',
+			'farmers_markets'   => 0,
+			'accent'            => '#147671',
+			'highlight'         => '#CF2C28',
+			'default_view'      => 'cards',
+			'default_unit'      => 'month',
+			'default_theme'     => 'light',
 			'show_theme_toggle' => 1,
-			'show_zoom'        => 1,
-			'show_search'      => 1,
-			'show_controls'    => 1,
-			'show_remember'    => 1,
-			'show_about'       => 1,
-			'contact_email'    => '',
-			'submit_url'       => '',
-			'submit_label'     => 'Submit Your Event',
-			'cache_minutes'    => 15,
-			'group_government' => 'Your Government',
-			'group_community'  => 'Your Community',
+			'show_zoom'         => 1,
+			'show_search'       => 1,
+			'show_controls'     => 1,
+			'show_remember'     => 1,
+			'show_about'        => 1,
+			'contact_email'     => '',
+			'submit_url'        => '',
+			'submit_label'      => 'Submit Your Event',
+			'cache_minutes'     => 15,
+			'group_government'  => 'Your Government',
+			'group_community'   => 'Your Community',
 			// Legacy iframe mode — kept so existing embeds keep working.
-			'calendar_url'     => '',
-			'default_height'   => 1000,
+			'calendar_url'      => '',
+			'default_height'    => 1000,
 		);
 	}
 
