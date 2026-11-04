@@ -74,6 +74,12 @@ class WPCC_Connectors {
 			return new WP_Error( 'wpcc_http', sprintf( __( 'HTTP %d fetching the feed', 'wpcalendarcats' ), $code ) );
 		}
 
+		// limit_response_size truncates silently, so a body exactly at the cap
+		// means the feed was cut off; say so instead of showing partial events.
+		if ( strlen( (string) wp_remote_retrieve_body( $response ) ) >= WPCC_ICS::MAX_FEED_BYTES ) {
+			return new WP_Error( 'wpcc_too_large', __( 'The feed is too large to load.', 'wpcalendarcats' ) );
+		}
+
 		$out = array(
 			'body' => (string) wp_remote_retrieve_body( $response ),
 			'type' => (string) wp_remote_retrieve_header( $response, 'content-type' ),

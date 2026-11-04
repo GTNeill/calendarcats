@@ -380,7 +380,7 @@ abc123@group.calendar.google.com | Neighborhood Events</pre>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<?php wp_nonce_field( 'wpcc_flush_cache' ); ?>
 				<input type="hidden" name="action" value="wpcc_flush_cache" />
-				<?php submit_button( __( 'Clear feed cache now', 'wpcalendarcats' ), 'secondary', 'submit', false ); ?>
+				<?php submit_button( __( 'Clear feed cache now', 'wpcalendarcats' ), 'secondary', 'wpcc-flush', false ); ?>
 			</form>
 		</div>
 		<?php
@@ -432,7 +432,7 @@ abc123@group.calendar.google.com | Neighborhood Events</pre>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<?php wp_nonce_field( 'wpcc_import_categories' ); ?>
 				<input type="hidden" name="action" value="wpcc_import_categories" />
-				<textarea name="wpcc_json" rows="10" class="large-text code" spellcheck="false"><?php echo esc_textarea( wp_json_encode( $cats, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) ); ?></textarea>
+				<textarea name="wpcc_json" rows="10" aria-label="<?php esc_attr_e( 'Categories JSON', 'wpcalendarcats' ); ?>" class="large-text code" spellcheck="false"><?php echo esc_textarea( wp_json_encode( $cats, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) ); ?></textarea>
 				<?php submit_button( __( 'Replace categories with this JSON', 'wpcalendarcats' ), 'secondary' ); ?>
 			</form>
 
