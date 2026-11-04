@@ -4,7 +4,7 @@ Tags: calendar, events, ical, ics, google calendar, community, squarespace, rss
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.2.1
+Stable tag: 2.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -120,6 +120,9 @@ Every class is prefixed `wpcc-`, and the palette runs through CSS custom propert
 
 == Upgrade Notice ==
 
+= 2.2.2 =
+A feed over 5 MB now shows an error instead of loading only part of its events. Small admin accessibility fixes.
+
 = 2.2.1 =
 Accessibility, security and speed fixes from a code review: events open from the keyboard, the popup is a proper dialog, feed fetching is hardened against private addresses and oversized responses, and event windows are cached. No settings changes.
 
@@ -130,6 +133,11 @@ Adds multi-day events, a Today view, an opt-in remembered category filter, an Ab
 Major rewrite: the plugin now renders the calendar itself instead of embedding an external app. Existing `[wpcalendarcats]` shortcodes keep working, and your old iframe URL is preserved — add `mode="iframe"` to any shortcode you want to keep as an embed.
 
 == Changelog ==
+
+= 2.2.2 =
+* **Oversized feeds.** A feed larger than 5 MB now reports "The feed is too large to load." instead of silently showing only the events in its first 5 MB.
+* Admin: the "Clear feed cache now" button no longer shares an id with Save Changes, and the categories import/export box has an accessible label.
+* Letter-spacing from your theme is kept on event rows and calendar chips.
 
 = 2.2.1 =
 * **Keyboard access.** Events in the Cards and Calendar views are real buttons, so they can be reached with Tab and opened with Enter or Space. The event popup is now a labelled dialog: focus moves into it, Tab is kept inside, and Esc or Close returns focus to the event that opened it.
