@@ -162,7 +162,7 @@ assets/
 
 ## Releasing a new version
 
-WordPress sites update from the **latest published GitHub Release**, not from the repo or tags alone. `includes/class-wpcc-updater.php` reads `/releases/latest`, strips the leading `v` from `tag_name`, and downloads the asset named exactly `calendarcats.zip`. Installs from before the 3.0 rename live in `wpcalendarcats/wpcalendarcats.php`, so every release must also carry a **legacy build** asset named `wpcalendarcats.zip` (same code, main file renamed, top-level folder `wpcalendarcats/`); the updater picks the right one by main-file name.
+WordPress sites update from the **latest published GitHub Release**, not from the repo or tags alone. `includes/class-wpcc-updater.php` reads `/releases/latest`, strips the leading `v` from `tag_name`, and downloads the asset named exactly `calendarcats.zip`.
 
 1. Bump the version in three places: `Version:` and `WPCC_VERSION` in `calendarcats.php`, and `Stable tag` in `readme.txt`.
 2. Add a `= X.Y.Z =` entry under `== Changelog ==` in `readme.txt` (and an Upgrade Notice if needed).
@@ -172,11 +172,6 @@ WordPress sites update from the **latest published GitHub Release**, not from th
    cd /home/user
    zip -rq /tmp/calendarcats.zip calendarcats -x "calendarcats/.git/*" "calendarcats/calendarcats.zip" "calendarcats/.gitignore"
    cp /tmp/calendarcats.zip calendarcats/calendarcats.zip
-   # legacy build for pre-3.0 installs
-   rm -rf /tmp/legacy && mkdir /tmp/legacy && cp -r calendarcats /tmp/legacy/wpcalendarcats
-   rm -rf /tmp/legacy/wpcalendarcats/.git /tmp/legacy/wpcalendarcats/*.zip /tmp/legacy/wpcalendarcats/.gitignore
-   mv /tmp/legacy/wpcalendarcats/calendarcats.php /tmp/legacy/wpcalendarcats/wpcalendarcats.php
-   (cd /tmp/legacy && zip -rq /tmp/wpcalendarcats.zip wpcalendarcats)
    ```
 5. Commit, tag and push:
    ```
@@ -184,7 +179,7 @@ WordPress sites update from the **latest published GitHub Release**, not from th
    git tag vX.Y.Z
    git push origin main && git push origin vX.Y.Z
    ```
-6. Create the release at https://github.com/GTNeill/calendarcats/releases/new: pick tag `vX.Y.Z`, title `vX.Y.Z`, paste the changelog entry, attach `calendarcats.zip` and `/tmp/wpcalendarcats.zip`, and click **Publish release**. It must not be a draft or pre-release, or `/releases/latest` ignores it. With the GitHub CLI: `gh release create vX.Y.Z calendarcats.zip --title vX.Y.Z --notes-file notes.md`.
+6. Create the release at https://github.com/GTNeill/calendarcats/releases/new: pick tag `vX.Y.Z`, title `vX.Y.Z`, paste the changelog entry, attach `calendarcats.zip`, and click **Publish release**. It must not be a draft or pre-release, or `/releases/latest` ignores it. With the GitHub CLI: `gh release create vX.Y.Z calendarcats.zip --title vX.Y.Z --notes-file notes.md`.
 7. Verify: `curl -s https://api.github.com/repos/GTNeill/calendarcats/releases/latest` should show the new `tag_name` and an asset called `calendarcats.zip`.
 
 WordPress caches update checks, so sites may lag; Dashboard → Updates → **Check again** forces it.

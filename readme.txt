@@ -4,7 +4,7 @@ Tags: calendar, events, ical, google calendar, community
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.0.0
+Stable tag: 3.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -120,8 +120,8 @@ Every class is prefixed `wpcc-`, and the palette runs through CSS custom propert
 
 == Upgrade Notice ==
 
-= 3.0.0 =
-The plugin is now called CalendarCats (was WPCalendarCats). Settings, the [wpcalendarcats] shortcode and the old REST URLs all keep working; new pages should use [calendarcats].
+= 3.0.1 =
+The plugin was renamed from WPCalendarCats to CalendarCats. Reinstall from calendarcats.zip and use the [calendarcats] shortcode; the old name is no longer supported.
 
 = 2.2.3 =
 Metadata update: tested with WordPress 7.1, minimum WordPress is now 5.9. No functional changes.
@@ -140,10 +140,11 @@ Major rewrite: the plugin now renders the calendar itself instead of embedding a
 
 == Changelog ==
 
+= 3.0.1 =
+* Removed the pre-rename compatibility code (`[wpcalendarcats]` alias, option migration, `wpcalendarcats/v1` REST routes, legacy zip).
+
 = 3.0.0 =
 * Renamed from WPCalendarCats to CalendarCats: plugin name, slug, text domain, main file (`calendarcats.php`), option names, REST namespace (`calendarcats/v1`), admin page slugs and GitHub repository.
-* Compatibility: `[wpcalendarcats]` still works as an alias of `[calendarcats]`; settings and categories are copied from the old options on first load; `wpcalendarcats/v1` REST routes are still served; the embedded app's `wpcalendarcats:resize` message is still understood.
-* Each release now ships two zips: `calendarcats.zip` and a `wpcalendarcats.zip` legacy build so existing installs update in place without being deactivated.
 
 = 2.2.3 =
 * Tested up to WordPress 7.1. Minimum WordPress is now 5.9 (the admin uses `wp_readonly()`).

@@ -17,30 +17,8 @@ class WPCC_Settings {
 	const OPTION      = 'calendarcats_settings';
 	const OPTION_CATS = 'calendarcats_categories';
 
-	/** Option names used before the 3.0 rename. */
-	const LEGACY_OPTION      = 'wpcalendarcats_settings';
-	const LEGACY_OPTION_CATS = 'wpcalendarcats_categories';
-
 	/** Google's public iCal URL template, used when a feed is given as a calendar id. */
 	const GCAL_ICAL = 'https://calendar.google.com/calendar/ical/%s/public/basic.ics';
-
-	/**
-	 * Carry settings over from the pre-3.0 option names. Runs once: it only
-	 * copies when the new option doesn't exist yet, and leaves the old rows in
-	 * place so a rollback still finds its data.
-	 */
-	public static function migrate_legacy() {
-		$missing = new stdClass();
-		foreach ( array( self::LEGACY_OPTION => self::OPTION, self::LEGACY_OPTION_CATS => self::OPTION_CATS ) as $old => $new ) {
-			if ( $missing !== get_option( $new, $missing ) ) {
-				continue;
-			}
-			$value = get_option( $old, $missing );
-			if ( $missing !== $value ) {
-				update_option( $new, $value, false );
-			}
-		}
-	}
 
 	/**
 	 * Defaults for a fresh install. The two seeded feeds are the 40th Ward's

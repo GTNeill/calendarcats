@@ -41,14 +41,6 @@ class WPCC_Updater {
 	 */
 	const ASSET = 'calendarcats.zip';
 
-	/**
-	 * Pre-3.0 installs keep their old `wpcalendarcats/wpcalendarcats.php` path,
-	 * so core would deactivate them if the update swapped the main file name.
-	 * Each release therefore also carries a legacy build with the old main file
-	 * name; those installs are pointed at it.
-	 */
-	const ASSET_LEGACY = 'wpcalendarcats.zip';
-
 	/** Plugin directory/slug, used for the "View details" modal. */
 	const SLUG = 'calendarcats';
 
@@ -79,15 +71,6 @@ class WPCC_Updater {
 	}
 
 	/**
-	 * Which release asset suits this install.
-	 *
-	 * @return string
-	 */
-	public static function asset_name() {
-		return 'wpcalendarcats.php' === basename( WPCC_FILE ) ? self::ASSET_LEGACY : self::ASSET;
-	}
-
-	/**
 	 * Tell core about the newest release.
 	 *
 	 * Core compares versions and files the result under `response` or
@@ -112,7 +95,7 @@ class WPCC_Updater {
 		}
 
 		return array(
-			'slug'         => dirname( plugin_basename( WPCC_FILE ) ),
+			'slug'         => self::SLUG,
 			'version'      => $release['version'],
 			'url'          => $release['url'],
 			'package'      => $release['package'],
@@ -135,7 +118,7 @@ class WPCC_Updater {
 		if ( 'plugin_information' !== $action ) {
 			return $result;
 		}
-		if ( empty( $args->slug ) || dirname( plugin_basename( WPCC_FILE ) ) !== $args->slug ) {
+		if ( empty( $args->slug ) || self::SLUG !== $args->slug ) {
 			return $result;
 		}
 
@@ -151,7 +134,7 @@ class WPCC_Updater {
 
 		$info = array(
 			'name'          => $plugin['Name'],
-			'slug'          => dirname( plugin_basename( WPCC_FILE ) ),
+			'slug'          => self::SLUG,
 			'version'       => $release['version'],
 			'author'        => $plugin['Author'],
 			'homepage'      => $plugin['PluginURI'],
@@ -217,7 +200,7 @@ class WPCC_Updater {
 		$package = '';
 		if ( ! empty( $body['assets'] ) && is_array( $body['assets'] ) ) {
 			foreach ( $body['assets'] as $asset ) {
-				if ( isset( $asset['name'] ) && self::asset_name() === $asset['name'] ) {
+				if ( isset( $asset['name'] ) && self::ASSET === $asset['name'] ) {
 					$package = $asset['browser_download_url'];
 					break;
 				}

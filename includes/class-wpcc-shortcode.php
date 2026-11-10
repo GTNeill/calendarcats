@@ -22,8 +22,6 @@ class WPCC_Shortcode {
 	 */
 	public static function init() {
 		add_shortcode( 'calendarcats', array( __CLASS__, 'render' ) );
-		// Pre-3.0 name (the plugin was called WPCalendarCats), so existing pages keep working.
-		add_shortcode( 'wpcalendarcats', array( __CLASS__, 'render' ) );
 		// Historic alias from the iframe-only releases.
 		add_shortcode( 'ward_calendar', array( __CLASS__, 'render' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
