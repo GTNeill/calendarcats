@@ -4,7 +4,7 @@ Tags: calendar, events, ical, google calendar, community
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.2.2
+Stable tag: 2.2.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -120,6 +120,9 @@ Every class is prefixed `wpcc-`, and the palette runs through CSS custom propert
 
 == Upgrade Notice ==
 
+= 2.2.3 =
+Metadata update: tested with WordPress 7.1, minimum WordPress is now 5.9. No functional changes.
+
 = 2.2.2 =
 A feed over 5 MB now shows an error instead of loading only part of its events. Small admin accessibility fixes.
 
@@ -133,6 +136,10 @@ Adds multi-day events, a Today view, an opt-in remembered category filter, an Ab
 Major rewrite: the plugin now renders the calendar itself instead of embedding an external app. Existing `[wpcalendarcats]` shortcodes keep working, and your old iframe URL is preserved — add `mode="iframe"` to any shortcode you want to keep as an embed.
 
 == Changelog ==
+
+= 2.2.3 =
+* Tested up to WordPress 7.1. Minimum WordPress is now 5.9 (the admin uses `wp_readonly()`).
+* Readme: five tags and a shorter description.
 
 = 2.2.2 =
 * **Oversized feeds.** A feed larger than 5 MB now reports "The feed is too large to load." instead of silently showing only the events in its first 5 MB.
