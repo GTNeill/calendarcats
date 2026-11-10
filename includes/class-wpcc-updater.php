@@ -54,7 +54,7 @@ class WPCC_Updater {
 	const FAIL_TTL = 1 * HOUR_IN_SECONDS;
 
 	/** Highest WordPress version this release was checked against. */
-	const TESTED = '6.8';
+	const TESTED = '7.1';
 
 	/**
 	 * Hook in.
@@ -100,7 +100,7 @@ class WPCC_Updater {
 			'url'          => $release['url'],
 			'package'      => $release['package'],
 			'tested'       => self::TESTED,
-			'requires'     => '5.8',
+			'requires'     => '5.9',
 			'requires_php' => '7.4',
 		);
 	}
@@ -138,7 +138,7 @@ class WPCC_Updater {
 			'version'       => $release['version'],
 			'author'        => $plugin['Author'],
 			'homepage'      => $plugin['PluginURI'],
-			'requires'      => '5.8',
+			'requires'      => '5.9',
 			'tested'        => self::TESTED,
 			'requires_php'  => '7.4',
 			'last_updated'  => $release['published'],

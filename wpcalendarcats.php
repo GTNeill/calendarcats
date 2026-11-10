@@ -5,7 +5,7 @@
  * Update URI:        https://github.com/GTNeill/wpcalendarcats
  * Description:       A self-contained community events calendar. Reads public iCalendar feeds directly, sorts events into keyword-driven categories, and renders them with a card view, a calendar grid, search and category filters — all via the [wpcalendarcats] shortcode. No external app or API key required.
  * Version:           2.2.2
- * Requires at least: 5.8
+ * Requires at least: 5.9
  * Requires PHP:      7.4
  * Author:            George Neill
  * License:           GPL-2.0-or-later

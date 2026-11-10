@@ -186,7 +186,7 @@ WordPress caches update checks, so sites may lag; Dashboard → Updates → **Ch
 
 ## Requirements
 
-WordPress 5.8+, PHP 7.4+.
+WordPress 5.9+ (tested up to 7.1), PHP 7.4+.
 
 ## License
 
