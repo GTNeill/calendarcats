@@ -1,25 +1,25 @@
 <?php
 /**
- * Plugin Name:       WPCalendarCats
- * Plugin URI:        https://github.com/GTNeill/wpcalendarcats
- * Update URI:        https://github.com/GTNeill/wpcalendarcats
- * Description:       A self-contained community events calendar. Reads public iCalendar feeds directly, sorts events into keyword-driven categories, and renders them with a card view, a calendar grid, search and category filters — all via the [wpcalendarcats] shortcode. No external app or API key required.
- * Version:           2.2.3
+ * Plugin Name:       CalendarCats
+ * Plugin URI:        https://github.com/GTNeill/calendarcats
+ * Update URI:        https://github.com/GTNeill/calendarcats
+ * Description:       A self-contained community events calendar. Reads public iCalendar feeds directly, sorts events into keyword-driven categories, and renders them with a card view, a calendar grid, search and category filters — all via the [calendarcats] shortcode. No external app or API key required.
+ * Version:           3.0.0
  * Requires at least: 5.9
  * Requires PHP:      7.4
  * Author:            George Neill
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       wpcalendarcats
+ * Text Domain:       calendarcats
  *
- * @package WPCalendarCats
+ * @package CalendarCats
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'WPCC_VERSION', '2.2.3' );
+define( 'WPCC_VERSION', '3.0.0' );
 define( 'WPCC_FILE', __FILE__ );
 define( 'WPCC_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WPCC_URL', plugin_dir_url( __FILE__ ) );
@@ -42,6 +42,7 @@ if ( is_admin() ) {
  * Wire everything up.
  */
 function wpcc_bootstrap() {
+	WPCC_Settings::migrate_legacy();
 	WPCC_REST::init();
 	WPCC_Shortcode::init();
 	// Not gated behind is_admin(): update checks also run from wp-cron.
@@ -58,6 +59,7 @@ add_action( 'plugins_loaded', 'wpcc_bootstrap' );
  * from the iframe-only 1.x releases keeps the configured URL working.
  */
 function wpcc_activate() {
+	WPCC_Settings::migrate_legacy();
 	$existing = get_option( WPCC_Settings::OPTION, array() );
 	if ( ! is_array( $existing ) ) {
 		$existing = array();
@@ -85,8 +87,8 @@ register_deactivation_hook( __FILE__, 'wpcc_deactivate' );
  * @return array
  */
 function wpcc_action_links( $links ) {
-	$url = admin_url( 'admin.php?page=wpcalendarcats' );
-	array_unshift( $links, '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Settings', 'wpcalendarcats' ) . '</a>' );
+	$url = admin_url( 'admin.php?page=calendarcats' );
+	array_unshift( $links, '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Settings', 'calendarcats' ) . '</a>' );
 	return $links;
 }
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wpcc_action_links' );

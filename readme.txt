@@ -1,10 +1,10 @@
-=== WPCalendarCats ===
+=== CalendarCats ===
 Contributors: gtneill
 Tags: calendar, events, ical, google calendar, community
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.2.3
+Stable tag: 3.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Community events calendar. Reads public iCalendar feeds, sorts events into categ
 
 == Description ==
 
-WPCalendarCats turns any set of public iCalendar (.ics) feeds — Google Calendar, Outlook, Teamup, Eventbrite, a city council calendar — into a browsable events calendar inside your WordPress site.
+CalendarCats turns any set of public iCalendar (.ics) feeds — Google Calendar, Outlook, Teamup, Eventbrite, a city council calendar — into a browsable events calendar inside your WordPress site.
 
 It runs entirely on your own site. There is no companion app to host, no API key to obtain, and no third-party service in the request path: WordPress fetches the feeds server-side, caches them, and serves the parsed events to the front end over its own REST API.
 
@@ -45,25 +45,25 @@ Times are rendered in the site's WordPress timezone, so every visitor sees the s
 
 == Installation ==
 
-1. Upload `wpcalendarcats.zip` via **Plugins → Add New → Upload Plugin**, or unzip it into `wp-content/plugins/`.
+1. Upload `calendarcats.zip` via **Plugins → Add New → Upload Plugin**, or unzip it into `wp-content/plugins/`.
 2. Activate the plugin.
-3. Go to **Calendar Cats** in the admin menu and paste in your feeds.
+3. Go to **CalendarCats** in the admin menu and paste in your feeds.
 4. Optionally open the **Categories** tab to adjust the keyword lists to your community's vocabulary.
-5. Add `[wpcalendarcats]` to any page or post.
+5. Add `[calendarcats]` to any page or post.
 
 == Usage ==
 
 Basic:
 
-`[wpcalendarcats]`
+`[calendarcats]`
 
 Calendar grid, week at a time, dark:
 
-`[wpcalendarcats view="calendar" unit="week" theme="dark"]`
+`[calendarcats view="calendar" unit="week" theme="dark"]`
 
 A single category, no chrome — good for a sidebar:
 
-`[wpcalendarcats categories="public_safety" controls="no" search="no"]`
+`[calendarcats categories="public_safety" controls="no" search="no"]`
 
 **Shortcode attributes**
 
@@ -120,6 +120,9 @@ Every class is prefixed `wpcc-`, and the palette runs through CSS custom propert
 
 == Upgrade Notice ==
 
+= 3.0.0 =
+The plugin is now called CalendarCats (was WPCalendarCats). Settings, the [wpcalendarcats] shortcode and the old REST URLs all keep working; new pages should use [calendarcats].
+
 = 2.2.3 =
 Metadata update: tested with WordPress 7.1, minimum WordPress is now 5.9. No functional changes.
 
@@ -133,9 +136,14 @@ Accessibility, security and speed fixes from a code review: events open from the
 Adds multi-day events, a Today view, an opt-in remembered category filter, an About popup, Squarespace / RSS / farmers-market sources and cross-source de-duplication. Existing shortcodes and settings keep working; new options default to off.
 
 = 2.0.0 =
-Major rewrite: the plugin now renders the calendar itself instead of embedding an external app. Existing `[wpcalendarcats]` shortcodes keep working, and your old iframe URL is preserved — add `mode="iframe"` to any shortcode you want to keep as an embed.
+Major rewrite: the plugin now renders the calendar itself instead of embedding an external app. Existing `[calendarcats]` shortcodes keep working, and your old iframe URL is preserved — add `mode="iframe"` to any shortcode you want to keep as an embed.
 
 == Changelog ==
+
+= 3.0.0 =
+* Renamed from WPCalendarCats to CalendarCats: plugin name, slug, text domain, main file (`calendarcats.php`), option names, REST namespace (`calendarcats/v1`), admin page slugs and GitHub repository.
+* Compatibility: `[wpcalendarcats]` still works as an alias of `[calendarcats]`; settings and categories are copied from the old options on first load; `wpcalendarcats/v1` REST routes are still served; the embedded app's `wpcalendarcats:resize` message is still understood.
+* Each release now ships two zips: `calendarcats.zip` and a `wpcalendarcats.zip` legacy build so existing installs update in place without being deactivated.
 
 = 2.2.3 =
 * Tested up to WordPress 7.1. Minimum WordPress is now 5.9 (the admin uses `wp_readonly()`).
@@ -202,11 +210,11 @@ Major rewrite: the plugin now renders the calendar itself instead of embedding a
 * Added keyword-driven categorisation: titles matched first, then descriptions for plain multi-word phrases only, on whole-word boundaries, with `other` as the enforced catch-all. Malformed keywords are skipped instead of breaking their category.
 * Added a full category editor — add, remove, reorder, recolour, re-icon, regroup, edit keyword lists, import/export JSON, and restore the shipped defaults.
 * Added a cards view, a month/week calendar grid, event popups, in-range search, category filter pills, light/dark themes and a theme toggle.
-* Added public read-only REST routes `wpcalendarcats/v1/events` and `wpcalendarcats/v1/categories`, backed by a transient feed cache with a configurable duration.
+* Added public read-only REST routes `calendarcats/v1/events` and `calendarcats/v1/categories`, backed by a transient feed cache with a configurable duration.
 * Events are emitted in the site's WordPress timezone so all visitors see the same posted time; locale comes from `get_locale()`.
 * Front end is dependency-free vanilla JavaScript with no build step, so it drops into any theme.
 * Added `uninstall.php` to remove options and cached feeds, multisite included.
 * Kept backwards compatibility: `mode="iframe"` still renders the 1.x embed, the `ward_calendar` alias is registered, and upgrading preserves existing settings.
 
 = 1.0.0 =
-* Initial release: `[wpcalendarcats]` shortcode embedding an externally hosted calendar app in an auto-resizing iframe.
+* Initial release: `[calendarcats]` shortcode embedding an externally hosted calendar app in an auto-resizing iframe.

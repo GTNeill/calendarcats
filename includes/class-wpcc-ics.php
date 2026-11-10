@@ -6,7 +6,7 @@
  * no API key. Feeds are fetched with the WordPress HTTP API and cached in
  * a transient so a page view never blocks on a network round trip.
  *
- * @package WPCalendarCats
+ * @package CalendarCats
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -100,7 +100,7 @@ class WPCC_ICS {
 			if ( is_wp_error( $found ) ) {
 				$errors[] = sprintf(
 					/* translators: 1: feed name, 2: error message */
-					__( '%1$s: %2$s', 'wpcalendarcats' ),
+					__( '%1$s: %2$s', 'calendarcats' ),
 					$feed['name'],
 					$found->get_error_message()
 				);
@@ -156,7 +156,7 @@ class WPCC_ICS {
 			array(
 				'timeout'             => 20,
 				'limit_response_size' => self::MAX_FEED_BYTES,
-				'user-agent'          => 'WPCalendarCats/' . WPCC_VERSION . '; ' . home_url( '/' ),
+				'user-agent'          => 'CalendarCats/' . WPCC_VERSION . '; ' . home_url( '/' ),
 				'headers'             => array( 'Accept' => 'text/calendar, text/plain, */*' ),
 			)
 		);
@@ -168,17 +168,17 @@ class WPCC_ICS {
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $code ) {
 			/* translators: %d: HTTP status code */
-			return new WP_Error( 'wpcc_http', sprintf( __( 'HTTP %d fetching the feed', 'wpcalendarcats' ), $code ) );
+			return new WP_Error( 'wpcc_http', sprintf( __( 'HTTP %d fetching the feed', 'calendarcats' ), $code ) );
 		}
 
 		$body = wp_remote_retrieve_body( $response );
 		// limit_response_size truncates silently, so a body exactly at the cap
 		// means the feed was cut off; say so instead of showing partial events.
 		if ( strlen( $body ) >= self::MAX_FEED_BYTES ) {
-			return new WP_Error( 'wpcc_too_large', __( 'The feed is too large to load.', 'wpcalendarcats' ) );
+			return new WP_Error( 'wpcc_too_large', __( 'The feed is too large to load.', 'calendarcats' ) );
 		}
 		if ( '' === trim( $body ) || false === stripos( $body, 'BEGIN:VCALENDAR' ) ) {
-			return new WP_Error( 'wpcc_not_ics', __( 'The response was not an iCalendar feed.', 'wpcalendarcats' ) );
+			return new WP_Error( 'wpcc_not_ics', __( 'The response was not an iCalendar feed.', 'calendarcats' ) );
 		}
 
 		// Very large bodies would bloat the options table; fetch them again instead.
@@ -256,7 +256,7 @@ class WPCC_ICS {
 			$uid     = self::field( $block, 'UID' );
 			$summary = self::field( $block, 'SUMMARY' );
 			if ( '' === $summary ) {
-				$summary = __( '(no title)', 'wpcalendarcats' );
+				$summary = __( '(no title)', 'calendarcats' );
 			}
 			$rec_id = self::field( $block, 'RECURRENCE-ID' );
 			$status = self::field( $block, 'STATUS' );

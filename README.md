@@ -1,11 +1,11 @@
-# WPCalendarCats
+# CalendarCats
 
 A self-contained WordPress community events calendar. Point it at public iCalendar feeds, and it renders a categorised, searchable, filterable calendar anywhere a shortcode goes.
 
 No companion app to host. No API key. No third-party service in the request path — WordPress fetches the feeds server-side, caches them, and serves parsed events over its own REST API.
 
 ```
-[wpcalendarcats]
+[calendarcats]
 ```
 
 ## What it does
@@ -22,7 +22,7 @@ No companion app to host. No API key. No third-party service in the request path
 - **About popup** — accessible modal listing every source with a "Visit site" link, plus an optional contact email.
 - **Light/dark themes** with an optional toggle.
 
-**Admin** (`Calendar Cats` in the menu)
+**Admin** (`CalendarCats` in the menu)
 
 - **Feeds** — one per line: a full `.ics` URL or a bare Google Calendar id, optionally suffixed `| Display Name`. `#` starts a comment.
 - **More sources** — Squarespace event pages, Wild Apricot events RSS, and a built-in 2026 Chicago 60625 farmers-market schedule (see [Sources](#sources)).
@@ -32,12 +32,12 @@ No companion app to host. No API key. No third-party service in the request path
 
 ## Install
 
-1. Build or download `wpcalendarcats.zip`.
+1. Build or download `calendarcats.zip`.
 2. **Plugins → Add New → Upload Plugin**, choose the zip, install, activate.
-3. **Calendar Cats** → paste your feeds → save.
-4. Drop `[wpcalendarcats]` into a page.
+3. **CalendarCats** → paste your feeds → save.
+4. Drop `[calendarcats]` into a page.
 
-To install from source instead, copy the repository into `wp-content/plugins/wpcalendarcats/`.
+To install from source instead, copy the repository into `wp-content/plugins/calendarcats/`.
 
 ## Shortcode
 
@@ -63,15 +63,15 @@ To install from source instead, copy the repository into `wp-content/plugins/wpc
 Examples:
 
 ```
-[wpcalendarcats view="calendar" unit="week" theme="dark"]
-[wpcalendarcats view="calendar" unit="day" about="yes" remember="yes"]
-[wpcalendarcats categories="public_safety,ward_office" controls="no" search="no"]
-[wpcalendarcats max_width="1100" submit_url="https://example.com/submit-event"]
+[calendarcats view="calendar" unit="week" theme="dark"]
+[calendarcats view="calendar" unit="day" about="yes" remember="yes"]
+[calendarcats categories="public_safety,ward_office" controls="no" search="no"]
+[calendarcats max_width="1100" submit_url="https://example.com/submit-event"]
 ```
 
 ## Sources
 
-Besides plain `.ics` feeds, **Calendar Cats → Feeds** takes:
+Besides plain `.ics` feeds, **CalendarCats → Feeds** takes:
 
 - **Squarespace events** — `Events page URL | Display Name | About-page link`, one per line, for organisations that publish no `.ics`.
 - **Events RSS** — same syntax, for Wild Apricot sites that offer only an RSS feed. RSS events carry a **start time only**: no end time, no location.
@@ -111,8 +111,8 @@ Event times are emitted as naive wall-clock ISO strings in the **site's** WordPr
 Both routes are public and read-only — the data comes from public feeds. Rate protection comes from the feed cache.
 
 ```
-GET /wp-json/wpcalendarcats/v1/events?timeMin=2026-08-01T00:00:00&timeMax=2026-09-01T00:00:00
-GET /wp-json/wpcalendarcats/v1/categories
+GET /wp-json/calendarcats/v1/events?timeMin=2026-08-01T00:00:00&timeMax=2026-09-01T00:00:00
+GET /wp-json/calendarcats/v1/categories
 ```
 
 The requested window is clamped to one year.
@@ -141,7 +141,7 @@ Category colour arrives per element as `--wpcc-cat`. The front end has no build 
 ## Layout
 
 ```
-wpcalendarcats.php              Plugin header, constants, bootstrap, activation
+calendarcats.php              Plugin header, constants, bootstrap, activation
 uninstall.php                   Removes options + cached feeds (multisite aware)
 includes/
   default-categories.php        17 shipped categories / 361 keywords
@@ -151,7 +151,7 @@ includes/
   class-wpcc-connectors.php     Squarespace, events-RSS and farmers-market sources
   class-wpcc-dedupe.php         Cross-source duplicate merging
   class-wpcc-rest.php           /events and /categories routes
-  class-wpcc-shortcode.php      [wpcalendarcats] + legacy iframe mode
+  class-wpcc-shortcode.php      [calendarcats] + legacy iframe mode
   class-wpcc-admin.php          Settings and category editor screens
 assets/
   wpcc.js                       Front-end calendar (vanilla JS)
@@ -162,16 +162,21 @@ assets/
 
 ## Releasing a new version
 
-WordPress sites update from the **latest published GitHub Release**, not from the repo or tags alone. `includes/class-wpcc-updater.php` reads `/releases/latest`, strips the leading `v` from `tag_name`, and downloads the asset named exactly `wpcalendarcats.zip`.
+WordPress sites update from the **latest published GitHub Release**, not from the repo or tags alone. `includes/class-wpcc-updater.php` reads `/releases/latest`, strips the leading `v` from `tag_name`, and downloads the asset named exactly `calendarcats.zip`. Installs from before the 3.0 rename live in `wpcalendarcats/wpcalendarcats.php`, so every release must also carry a **legacy build** asset named `wpcalendarcats.zip` (same code, main file renamed, top-level folder `wpcalendarcats/`); the updater picks the right one by main-file name.
 
-1. Bump the version in three places: `Version:` and `WPCC_VERSION` in `wpcalendarcats.php`, and `Stable tag` in `readme.txt`.
+1. Bump the version in three places: `Version:` and `WPCC_VERSION` in `calendarcats.php`, and `Stable tag` in `readme.txt`.
 2. Add a `= X.Y.Z =` entry under `== Changelog ==` in `readme.txt` (and an Upgrade Notice if needed).
 3. Check syntax: `php -l` on each PHP file, `node --check assets/wpcc.js`.
-4. Rebuild the zip from the folder *above* the repo (the zip must contain a top-level `wpcalendarcats/` folder):
+4. Rebuild the zip from the folder *above* the repo (the zip must contain a top-level `calendarcats/` folder):
    ```
    cd /home/user
-   zip -rq /tmp/wpcalendarcats.zip wpcalendarcats -x "wpcalendarcats/.git/*" "wpcalendarcats/wpcalendarcats.zip" "wpcalendarcats/.gitignore"
-   cp /tmp/wpcalendarcats.zip wpcalendarcats/wpcalendarcats.zip
+   zip -rq /tmp/calendarcats.zip calendarcats -x "calendarcats/.git/*" "calendarcats/calendarcats.zip" "calendarcats/.gitignore"
+   cp /tmp/calendarcats.zip calendarcats/calendarcats.zip
+   # legacy build for pre-3.0 installs
+   rm -rf /tmp/legacy && mkdir /tmp/legacy && cp -r calendarcats /tmp/legacy/wpcalendarcats
+   rm -rf /tmp/legacy/wpcalendarcats/.git /tmp/legacy/wpcalendarcats/*.zip /tmp/legacy/wpcalendarcats/.gitignore
+   mv /tmp/legacy/wpcalendarcats/calendarcats.php /tmp/legacy/wpcalendarcats/wpcalendarcats.php
+   (cd /tmp/legacy && zip -rq /tmp/wpcalendarcats.zip wpcalendarcats)
    ```
 5. Commit, tag and push:
    ```
@@ -179,8 +184,8 @@ WordPress sites update from the **latest published GitHub Release**, not from th
    git tag vX.Y.Z
    git push origin main && git push origin vX.Y.Z
    ```
-6. Create the release at https://github.com/GTNeill/wpcalendarcats/releases/new: pick tag `vX.Y.Z`, title `vX.Y.Z`, paste the changelog entry, attach `wpcalendarcats.zip`, and click **Publish release**. It must not be a draft or pre-release, or `/releases/latest` ignores it. With the GitHub CLI: `gh release create vX.Y.Z wpcalendarcats.zip --title vX.Y.Z --notes-file notes.md`.
-7. Verify: `curl -s https://api.github.com/repos/GTNeill/wpcalendarcats/releases/latest` should show the new `tag_name` and an asset called `wpcalendarcats.zip`.
+6. Create the release at https://github.com/GTNeill/calendarcats/releases/new: pick tag `vX.Y.Z`, title `vX.Y.Z`, paste the changelog entry, attach `calendarcats.zip` and `/tmp/wpcalendarcats.zip`, and click **Publish release**. It must not be a draft or pre-release, or `/releases/latest` ignores it. With the GitHub CLI: `gh release create vX.Y.Z calendarcats.zip --title vX.Y.Z --notes-file notes.md`.
+7. Verify: `curl -s https://api.github.com/repos/GTNeill/calendarcats/releases/latest` should show the new `tag_name` and an asset called `calendarcats.zip`.
 
 WordPress caches update checks, so sites may lag; Dashboard → Updates → **Check again** forces it.
 

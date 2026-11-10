@@ -1,5 +1,5 @@
 /**
- * WPCalendarCats — category editor behaviour.
+ * CalendarCats — category editor behaviour.
  *
  * Plain DOM, no dependencies. Rows are added by cloning the
  * <script type="text/template"> markup PHP renders and swapping the

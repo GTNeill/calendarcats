@@ -6,7 +6,7 @@
  * is nothing to protect, but responses are still rate-limited by the feed
  * cache rather than hitting Google on every request.
  *
- * @package WPCalendarCats
+ * @package CalendarCats
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -18,7 +18,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WPCC_REST {
 
-	const NAMESPACE_V1 = 'wpcalendarcats/v1';
+	const NAMESPACE_V1 = 'calendarcats/v1';
+
+	/** Pre-3.0 namespace, still served so external consumers keep working. */
+	const NAMESPACE_LEGACY = 'wpcalendarcats/v1';
 
 	/**
 	 * Register hooks.
@@ -31,8 +34,19 @@ class WPCC_REST {
 	 * Register the REST routes.
 	 */
 	public static function register_routes() {
+		foreach ( array( self::NAMESPACE_V1, self::NAMESPACE_LEGACY ) as $namespace ) {
+			self::register_namespace( $namespace );
+		}
+	}
+
+	/**
+	 * Register the routes under one namespace.
+	 *
+	 * @param string $namespace REST namespace.
+	 */
+	protected static function register_namespace( $namespace ) {
 		register_rest_route(
-			self::NAMESPACE_V1,
+			$namespace,
 			'/events',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -52,7 +66,7 @@ class WPCC_REST {
 		);
 
 		register_rest_route(
-			self::NAMESPACE_V1,
+			$namespace,
 			'/categories',
 			array(
 				'methods'             => WP_REST_Server::READABLE,

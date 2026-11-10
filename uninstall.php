@@ -1,11 +1,11 @@
 <?php
 /**
- * Runs when WPCalendarCats is deleted from the Plugins screen.
+ * Runs when CalendarCats is deleted from the Plugins screen.
  *
  * Removes both options and every cached feed transient. Deactivation leaves
  * settings alone on purpose — only an explicit delete clears them.
  *
- * @package WPCalendarCats
+ * @package CalendarCats
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
@@ -18,6 +18,8 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 function wpcc_uninstall_site() {
 	global $wpdb;
 
+	delete_option( 'calendarcats_settings' );
+	delete_option( 'calendarcats_categories' );
 	delete_option( 'wpcalendarcats_settings' );
 	delete_option( 'wpcalendarcats_categories' );
 	delete_option( 'wpcc_cache_ver' );

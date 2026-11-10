@@ -16,7 +16,7 @@
  *
  * Ported from the hosted Community Calendar app (api/lib/dedupe.ts).
  *
- * @package WPCalendarCats
+ * @package CalendarCats
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

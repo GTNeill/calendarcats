@@ -13,7 +13,7 @@
  * Every connector returns events already shaped for the front end, so
  * categorisation, de-duplication and the UI treat them like any other.
  *
- * @package WPCalendarCats
+ * @package CalendarCats
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -60,7 +60,7 @@ class WPCC_Connectors {
 			array(
 				'timeout'             => 20,
 				'limit_response_size' => WPCC_ICS::MAX_FEED_BYTES,
-				'user-agent'          => 'WPCalendarCats/' . WPCC_VERSION . '; ' . home_url( '/' ),
+				'user-agent'          => 'CalendarCats/' . WPCC_VERSION . '; ' . home_url( '/' ),
 				'headers'             => array( 'Accept' => $accept ),
 			)
 		);
@@ -71,13 +71,13 @@ class WPCC_Connectors {
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $code ) {
 			/* translators: %d: HTTP status code */
-			return new WP_Error( 'wpcc_http', sprintf( __( 'HTTP %d fetching the feed', 'wpcalendarcats' ), $code ) );
+			return new WP_Error( 'wpcc_http', sprintf( __( 'HTTP %d fetching the feed', 'calendarcats' ), $code ) );
 		}
 
 		// limit_response_size truncates silently, so a body exactly at the cap
 		// means the feed was cut off; say so instead of showing partial events.
 		if ( strlen( (string) wp_remote_retrieve_body( $response ) ) >= WPCC_ICS::MAX_FEED_BYTES ) {
-			return new WP_Error( 'wpcc_too_large', __( 'The feed is too large to load.', 'wpcalendarcats' ) );
+			return new WP_Error( 'wpcc_too_large', __( 'The feed is too large to load.', 'calendarcats' ) );
 		}
 
 		$out = array(
@@ -184,7 +184,7 @@ class WPCC_Connectors {
 
 				$out[] = WPCC_ICS::shape(
 					array(
-						'summary'     => '' !== trim( isset( $item['title'] ) ? (string) $item['title'] : '' ) ? trim( $item['title'] ) : __( '(no title)', 'wpcalendarcats' ),
+						'summary'     => '' !== trim( isset( $item['title'] ) ? (string) $item['title'] : '' ) ? trim( $item['title'] ) : __( '(no title)', 'calendarcats' ),
 						'location'    => self::squarespace_location( isset( $item['location'] ) ? $item['location'] : null ),
 						'description' => self::html_to_text( $desc ),
 						'organizer'   => $feed['name'],
@@ -249,7 +249,7 @@ class WPCC_Connectors {
 			// Squarespace answers with the rendered HTML page when the path
 			// isn't an events collection.
 			/* translators: %s: content type returned */
-			return new WP_Error( 'wpcc_not_sqsp', sprintf( __( 'Expected JSON, got "%s" — is that URL a Squarespace events collection?', 'wpcalendarcats' ), $res['type'] ) );
+			return new WP_Error( 'wpcc_not_sqsp', sprintf( __( 'Expected JSON, got "%s" — is that URL a Squarespace events collection?', 'calendarcats' ), $res['type'] ) );
 		}
 		return $data;
 	}
@@ -464,7 +464,7 @@ class WPCC_Connectors {
 			'rss:' . $origin . ':' . $part . ':' . $day,
 			$start,
 			'' === $time,
-			'' !== $parsed['clean'] ? $parsed['clean'] : __( '(no title)', 'wpcalendarcats' ),
+			'' !== $parsed['clean'] ? $parsed['clean'] : __( '(no title)', 'calendarcats' ),
 		);
 	}
 

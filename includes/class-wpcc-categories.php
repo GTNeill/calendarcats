@@ -7,7 +7,7 @@
  * first; only then are long-form descriptions consulted, and only with
  * unambiguous multi-word literal phrases — see match_description() for why.
  *
- * @package WPCalendarCats
+ * @package CalendarCats
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -191,7 +191,7 @@ class WPCC_Categories {
 	public static function fallback() {
 		return array(
 			'key'      => 'other',
-			'label'    => __( 'Other', 'wpcalendarcats' ),
+			'label'    => __( 'Other', 'calendarcats' ),
 			'icon'     => '📌',
 			'color'    => '#5A5A5A',
 			'group'    => 'community',

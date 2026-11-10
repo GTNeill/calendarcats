@@ -1,5 +1,5 @@
 /**
- * WPCalendarCats front end.
+ * CalendarCats front end.
  *
  * Reads events from the plugin's REST route and renders the card view,
  * calendar grid, search results, category filters and event popups.

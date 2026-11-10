@@ -5,7 +5,7 @@
  * Mirrors the 40th Ward calendar's categories.json. Used to seed the
  * category editor on first activation and by "Restore defaults".
  *
- * @package WPCalendarCats
+ * @package CalendarCats
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

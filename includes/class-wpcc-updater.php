@@ -16,7 +16,7 @@
  * Nothing installs on its own. Core decides that, based on the site's
  * auto-update settings; all this does is make an update *visible*.
  *
- * @package WPCalendarCats
+ * @package CalendarCats
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -29,20 +29,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WPCC_Updater {
 
 	/** Repository the releases live in. */
-	const REPO = 'GTNeill/wpcalendarcats';
+	const REPO = 'GTNeill/calendarcats';
 
 	/**
 	 * Release asset holding the installable build.
 	 *
 	 * GitHub's auto-generated source zipball is deliberately not used as a
-	 * fallback: it unpacks to `wpcalendarcats-<tag>/`, so WordPress would
+	 * fallback: it unpacks to `calendarcats-<tag>/`, so WordPress would
 	 * install it as a second, separate plugin instead of upgrading this one.
-	 * Only the built zip has the correct `wpcalendarcats/` folder inside.
+	 * Only the built zip has the correct `calendarcats/` folder inside.
 	 */
-	const ASSET = 'wpcalendarcats.zip';
+	const ASSET = 'calendarcats.zip';
+
+	/**
+	 * Pre-3.0 installs keep their old `wpcalendarcats/wpcalendarcats.php` path,
+	 * so core would deactivate them if the update swapped the main file name.
+	 * Each release therefore also carries a legacy build with the old main file
+	 * name; those installs are pointed at it.
+	 */
+	const ASSET_LEGACY = 'wpcalendarcats.zip';
 
 	/** Plugin directory/slug, used for the "View details" modal. */
-	const SLUG = 'wpcalendarcats';
+	const SLUG = 'calendarcats';
 
 	/** Cached release payload. */
 	const CACHE_KEY = 'wpcc_latest_release';
@@ -71,6 +79,15 @@ class WPCC_Updater {
 	}
 
 	/**
+	 * Which release asset suits this install.
+	 *
+	 * @return string
+	 */
+	public static function asset_name() {
+		return 'wpcalendarcats.php' === basename( WPCC_FILE ) ? self::ASSET_LEGACY : self::ASSET;
+	}
+
+	/**
 	 * Tell core about the newest release.
 	 *
 	 * Core compares versions and files the result under `response` or
@@ -95,7 +112,7 @@ class WPCC_Updater {
 		}
 
 		return array(
-			'slug'         => self::SLUG,
+			'slug'         => dirname( plugin_basename( WPCC_FILE ) ),
 			'version'      => $release['version'],
 			'url'          => $release['url'],
 			'package'      => $release['package'],
@@ -118,7 +135,7 @@ class WPCC_Updater {
 		if ( 'plugin_information' !== $action ) {
 			return $result;
 		}
-		if ( empty( $args->slug ) || self::SLUG !== $args->slug ) {
+		if ( empty( $args->slug ) || dirname( plugin_basename( WPCC_FILE ) ) !== $args->slug ) {
 			return $result;
 		}
 
@@ -134,7 +151,7 @@ class WPCC_Updater {
 
 		$info = array(
 			'name'          => $plugin['Name'],
-			'slug'          => self::SLUG,
+			'slug'          => dirname( plugin_basename( WPCC_FILE ) ),
 			'version'       => $release['version'],
 			'author'        => $plugin['Author'],
 			'homepage'      => $plugin['PluginURI'],
@@ -178,7 +195,7 @@ class WPCC_Updater {
 				'headers' => array(
 					'Accept'     => 'application/vnd.github+json',
 					// GitHub rejects requests without a User-Agent.
-					'User-Agent' => 'WPCalendarCats/' . WPCC_VERSION . '; ' . home_url( '/' ),
+					'User-Agent' => 'CalendarCats/' . WPCC_VERSION . '; ' . home_url( '/' ),
 				),
 			)
 		);
@@ -200,7 +217,7 @@ class WPCC_Updater {
 		$package = '';
 		if ( ! empty( $body['assets'] ) && is_array( $body['assets'] ) ) {
 			foreach ( $body['assets'] as $asset ) {
-				if ( isset( $asset['name'] ) && self::ASSET === $asset['name'] ) {
+				if ( isset( $asset['name'] ) && self::asset_name() === $asset['name'] ) {
 					$package = $asset['browser_download_url'];
 					break;
 				}
@@ -280,7 +297,7 @@ class WPCC_Updater {
 		);
 
 		$links[] = '<a href="' . esc_url( $url ) . '">' .
-			esc_html__( 'Check for updates', 'wpcalendarcats' ) . '</a>';
+			esc_html__( 'Check for updates', 'calendarcats' ) . '</a>';
 
 		return $links;
 	}
@@ -298,7 +315,7 @@ class WPCC_Updater {
 	protected static function markdown( $text ) {
 		$text = esc_html( trim( $text ) );
 		if ( '' === $text ) {
-			return '<p>' . esc_html__( 'No release notes provided.', 'wpcalendarcats' ) . '</p>';
+			return '<p>' . esc_html__( 'No release notes provided.', 'calendarcats' ) . '</p>';
 		}
 
 		$text = preg_replace( '/`([^`]+)`/', '<code>$1</code>', $text );
