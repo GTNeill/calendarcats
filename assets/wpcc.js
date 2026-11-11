@@ -499,7 +499,7 @@
 		// so announcing the emoji only adds noise ("classical building, Ward
 		// Office"). It also keeps contrast checkers off a glyph they can't
 		// measure.
-		return '<span class="wpcc-icon" aria-hidden="true" style="font-size:' + Math.round( size * 0.9 ) + 'px">' + escapeHtml( icon ) + '</span>';
+		return '<span class="wpcc-icon" aria-hidden="true" style="font-size:' + Math.max( 12, Math.round( size * 0.9 ) ) + 'px">' + escapeHtml( icon ) + '</span>';
 	}
 
 	/* ── Cookies ───────────────────────────────────────────────────────

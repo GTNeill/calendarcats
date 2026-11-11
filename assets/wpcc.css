@@ -242,7 +242,7 @@
 .wpcc-zoom-value {
 	min-width: 46px;
 	padding: 0 8px;
-	font-size: 0.72rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	font-variant-numeric: tabular-nums;
 	letter-spacing: 0.02em;
@@ -510,7 +510,7 @@
 }
 
 .wpcc-group-head span {
-	font-size: 0.72rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	letter-spacing: 0.09em;
 	text-transform: uppercase;
@@ -562,7 +562,7 @@
 	flex: none;
 	min-width: 22px;
 	padding: 2px 7px;
-	font-size: 0.7rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	text-align: center;
 	/* The badge paints the raw category colour, so the number needs a
@@ -668,7 +668,7 @@
 
 .wpcc-row-dow {
 	display: block;
-	font-size: 0.6rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
@@ -684,7 +684,7 @@
 
 .wpcc-row-mon {
 	display: block;
-	font-size: 0.6rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
@@ -709,7 +709,7 @@
 	display: inline-block;
 	margin-left: 4px;
 	padding: 1px 6px;
-	font-size: 0.6rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	letter-spacing: 0.05em;
 	text-transform: uppercase;
@@ -732,7 +732,7 @@
 	display: inline-block;
 	margin-left: 4px;
 	padding: 0 5px;
-	font-size: 0.65rem;
+	font-size: 0.75rem;
 	font-weight: 600;
 	color: var( --wpcc-muted );
 	background: var( --wpcc-surface-2 );
@@ -751,7 +751,7 @@
 }
 
 .wpcc-divider span {
-	font-size: 0.62rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
@@ -815,7 +815,7 @@
 
 .wpcc-dow-name {
 	display: block;
-	font-size: 0.62rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
@@ -866,7 +866,7 @@
 
 .wpcc-day-num {
 	margin-bottom: 3px;
-	font-size: 0.72rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	color: var( --wpcc-muted );
 	text-align: right;
@@ -905,7 +905,7 @@
 	margin: 0;
 	padding: 2px 4px;
 	font-family: inherit;
-	font-size: 0.7rem;
+	font-size: 0.75rem;
 	line-height: 1.25;
 	letter-spacing: inherit;
 	text-align: left;
@@ -944,7 +944,7 @@
 
 .wpcc-chip-dot {
 	flex: none;
-	font-size: 0.5rem;
+	font-size: 0.75rem;
 	color: var( --wpcc-cat-text, var( --wpcc-cat, var( --wpcc-accent ) ) );
 }
 
@@ -1026,7 +1026,7 @@
 	height: 24px;
 	padding: 0;
 	font: inherit;
-	font-size: 0.7rem;
+	font-size: 0.75rem;
 	line-height: 1;
 	color: var( --wpcc-muted );
 	background: var( --wpcc-surface-2 );
@@ -1049,7 +1049,7 @@
 	display: flex;
 	align-items: center;
 	gap: 4px;
-	font-size: 0.65rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	letter-spacing: 0.07em;
 	text-transform: uppercase;
@@ -1141,7 +1141,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
-	font-size: 0.65rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	letter-spacing: 0.07em;
 	text-transform: uppercase;
@@ -1149,7 +1149,7 @@
 }
 
 .wpcc-detail-when {
-	font-size: 0.72rem;
+	font-size: 0.75rem;
 	font-weight: 600;
 	color: var( --wpcc-muted );
 }
@@ -1202,7 +1202,7 @@
 	}
 
 	.wpcc-chip-text {
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 	}
 }
 
@@ -1229,7 +1229,7 @@
 .wpcc-row-end {
 	display: block;
 	margin-top: 2px;
-	font-size: 0.55rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	line-height: 1.2;
 	white-space: nowrap;
@@ -1242,7 +1242,7 @@
 }
 
 .wpcc-chip.is-cont .wpcc-chip-dot {
-	font-size: 0.6rem;
+	font-size: 0.75rem;
 }
 
 .wpcc-chip-cont {
@@ -1481,7 +1481,7 @@
 .wpcc-about-h {
 	margin: 18px 0 8px;
 	padding: 0;
-	font-size: 0.72rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;

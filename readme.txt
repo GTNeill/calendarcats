@@ -4,7 +4,7 @@ Tags: calendar, events, ical, google calendar, community
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.0.2
+Stable tag: 3.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -120,6 +120,9 @@ Every class is prefixed `wpcc-`, and the palette runs through CSS custom propert
 
 == Upgrade Notice ==
 
+= 3.0.3 =
+Accessibility: no text in the calendar is smaller than 12px any more (fixes WAVE "very small text" alerts). Day/date labels, duration badges and calendar chips are slightly larger.
+
 = 3.0.2 =
 Accessibility: the calendar now exposes a labelled region, a heading outline and navigation/search landmarks to screen readers. No visual changes.
 
@@ -142,6 +145,9 @@ Adds multi-day events, a Today view, an opt-in remembered category filter, an Ab
 Major rewrite: the plugin now renders the calendar itself instead of embedding an external app. Existing `[calendarcats]` shortcodes keep working, and your old iframe URL is preserved — add `mode="iframe"` to any shortcode you want to keep as an embed.
 
 == Changelog ==
+
+= 3.0.3 =
+* Accessibility: raised every font size below 12px (0.75rem) to 12px — weekday/month labels on event rows, the Today badge, duration badges, calendar weekday headers, chip times and dots, popup category — and set a 12px floor on category icons. Fixes WAVE "very small text" alerts.
 
 = 3.0.2 =
 * Accessibility: the calendar is now a labelled region ("Categorized Calendar Events") with a visually hidden top-level heading, and a consistent heading outline beneath it (period, group, category and search-result headings).
