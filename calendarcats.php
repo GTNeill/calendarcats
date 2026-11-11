@@ -4,7 +4,7 @@
  * Plugin URI:        https://github.com/GTNeill/calendarcats
  * Update URI:        https://github.com/GTNeill/calendarcats
  * Description:       A self-contained community events calendar. Reads public iCalendar feeds directly, sorts events into keyword-driven categories, and renders them with a card view, a calendar grid, search and category filters — all via the [calendarcats] shortcode. No external app or API key required.
- * Version:           3.0.1
+ * Version:           3.0.2
  * Requires at least: 5.9
  * Requires PHP:      7.4
  * Author:            George Neill
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'WPCC_VERSION', '3.0.1' );
+define( 'WPCC_VERSION', '3.0.2' );
 define( 'WPCC_FILE', __FILE__ );
 define( 'WPCC_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WPCC_URL', plugin_dir_url( __FILE__ ) );

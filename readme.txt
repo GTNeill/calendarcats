@@ -4,7 +4,7 @@ Tags: calendar, events, ical, google calendar, community
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.0.1
+Stable tag: 3.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -120,6 +120,9 @@ Every class is prefixed `wpcc-`, and the palette runs through CSS custom propert
 
 == Upgrade Notice ==
 
+= 3.0.2 =
+Accessibility: the calendar now exposes a labelled region, a heading outline and navigation/search landmarks to screen readers. No visual changes.
+
 = 3.0.1 =
 The plugin was renamed from WPCalendarCats to CalendarCats. Reinstall from calendarcats.zip and use the [calendarcats] shortcode; the old name is no longer supported.
 
@@ -139,6 +142,11 @@ Adds multi-day events, a Today view, an opt-in remembered category filter, an Ab
 Major rewrite: the plugin now renders the calendar itself instead of embedding an external app. Existing `[calendarcats]` shortcodes keep working, and your old iframe URL is preserved — add `mode="iframe"` to any shortcode you want to keep as an embed.
 
 == Changelog ==
+
+= 3.0.2 =
+* Accessibility: the calendar is now a labelled region ("Categorized Calendar Events") with a visually hidden top-level heading, and a consistent heading outline beneath it (period, group, category and search-result headings).
+* Accessibility: the toolbar is a navigation landmark, the search box a search landmark, the category filters a labelled group, and the event area a labelled region.
+* New `title="…"` shortcode attribute to change the region name and hidden heading. No visual changes.
 
 = 3.0.1 =
 * Removed the pre-rename compatibility code (`[wpcalendarcats]` alias, option migration, `wpcalendarcats/v1` REST routes, legacy zip).

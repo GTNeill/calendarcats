@@ -54,6 +54,7 @@ To install from source instead, copy the repository into `wp-content/plugins/cal
 | `about` | `yes`, `no` | About button and popup |
 | `categories` | `key,key` | Restrict to specific category keys |
 | `max_width` | pixels | Centres the calendar within that width |
+| `title` | text | Accessible name of the calendar region and its hidden top heading (default "Categorized Calendar Events") |
 | `submit_url` | URL | Renders a "Submit Your Event" button |
 | `mode` | `native`, `iframe` | `iframe` is the legacy 1.x embed |
 | `url`, `height` | | `mode="iframe"` only |

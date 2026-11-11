@@ -365,6 +365,7 @@ abc123@group.calendar.google.com | Neighborhood Events</pre>
 					<tr><td><code>search="no"</code></td><td><?php esc_html_e( 'Hide the search box.', 'calendarcats' ); ?></td></tr>
 					<tr><td><code>controls="no"</code></td><td><?php esc_html_e( 'Hide the navigation bar — useful for a compact widget-style embed.', 'calendarcats' ); ?></td></tr>
 					<tr><td><code>theme_toggle="no"</code></td><td><?php esc_html_e( 'Hide the light/dark toggle.', 'calendarcats' ); ?></td></tr>
+					<tr><td><code>title="…"</code></td><td><?php esc_html_e( 'Accessible name for the calendar region and its hidden heading. Default: Categorized Calendar Events.', 'calendarcats' ); ?></td></tr>
 					<tr><td><code>max_width="1100"</code></td><td><?php esc_html_e( 'Cap the width in pixels and center it.', 'calendarcats' ); ?></td></tr>
 					<tr><td><code>mode="iframe" url="…"</code></td><td><?php esc_html_e( 'Legacy: embed an externally hosted calendar app instead.', 'calendarcats' ); ?></td></tr>
 				</tbody>

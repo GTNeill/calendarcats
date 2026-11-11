@@ -542,6 +542,20 @@
 		return node;
 	}
 
+	/**
+	 * Mark an existing element as a heading without swapping the tag, so the
+	 * host theme's h2/h3 rules can't change how it looks.
+	 *
+	 * @param {Element} node  Element to promote.
+	 * @param {number}  level Heading level, 2-6.
+	 * @return {Element} The same node.
+	 */
+	function asHeading( node, level ) {
+		node.setAttribute( 'role', 'heading' );
+		node.setAttribute( 'aria-level', String( level ) );
+		return node;
+	}
+
 	/* ── The calendar instance ─────────────────────────────────────────── */
 
 	function Calendar( root ) {
@@ -553,6 +567,7 @@
 		}
 
 		var strings = config.strings || {};
+		var calendarTitle = config.title || strings.calendarTitle || 'Categorized Calendar Events';
 		var locale = config.locale || 'en-US';
 
 		var state = {
@@ -1102,6 +1117,13 @@
 			root.className = 'wpcc-app wpcc-theme-' + state.theme;
 			root.innerHTML = '';
 
+			// Region name and top-level heading for the whole widget. Visually
+			// hidden: the page's own layout already frames the calendar, but
+			// screen-reader users get a labelled region and a heading to jump to.
+			root.setAttribute( 'role', 'region' );
+			root.setAttribute( 'aria-label', calendarTitle );
+			root.appendChild( el( 'h2', 'wpcc-sr-only wpcc-title', escapeHtml( calendarTitle ) ) );
+
 			if ( config.showControls ) {
 				root.appendChild( renderControls() );
 			}
@@ -1116,6 +1138,8 @@
 			}
 
 			var body = el( 'div', 'wpcc-body' );
+			body.setAttribute( 'role', 'region' );
+			body.setAttribute( 'aria-label', state.search.trim() ? ( strings.searchResults || 'Search results' ) : ( strings.eventsRegion || 'Events' ) );
 			root.appendChild( body );
 			// render() rebuilds the DOM, so the current zoom has to be
 			// re-applied to the fresh body node or it resets on every reload.
@@ -1329,13 +1353,18 @@
 			var wrap = el( 'div', 'wpcc-controls' );
 
 			var meta = el( 'div', 'wpcc-meta' );
-			meta.appendChild( el( 'div', 'wpcc-range', escapeHtml( rangeLabel( range.start, range.end, locale ) ) ) );
+			var rangeEl = el( 'div', 'wpcc-range', escapeHtml( rangeLabel( range.start, range.end, locale ) ) );
+			// The calendar views already show their own period title, so only
+			// the cards view needs this label as a heading.
+			meta.appendChild( 'cards' === state.view ? asHeading( rangeEl, 3 ) : rangeEl );
 			if ( state.fetchedAt ) {
 				meta.appendChild( el( 'div', 'wpcc-updated', escapeHtml( ( strings.updated || 'Updated' ) + ' ' + timeSince( state.fetchedAt ) ) ) );
 			}
 			wrap.appendChild( meta );
 
 			var bar = el( 'div', 'wpcc-bar' );
+			bar.setAttribute( 'role', 'navigation' );
+			bar.setAttribute( 'aria-label', strings.calendarNav || 'Calendar navigation' );
 
 			// Today / week / month.
 			var unitGroup = el( 'div', 'wpcc-group' );
@@ -1435,6 +1464,8 @@
 
 		function renderSearch() {
 			var wrap = el( 'div', 'wpcc-search' + ( state.search ? ' is-active' : '' ) );
+			wrap.setAttribute( 'role', 'search' );
+			wrap.setAttribute( 'aria-label', strings.searchLabel || 'Search events' );
 			wrap.innerHTML = '<span class="wpcc-search-ico" aria-hidden="true">' + svgIcon( 'search' ) + '</span>';
 
 			var input = el( 'input' );
@@ -1504,6 +1535,8 @@
 
 		function renderFilters( cats ) {
 			var wrap = el( 'div', 'wpcc-filters' );
+			wrap.setAttribute( 'role', 'group' );
+			wrap.setAttribute( 'aria-label', strings.filterGroup || 'Filter by category' );
 			if ( ! cats.length ) {
 				return wrap;
 			}
@@ -1634,18 +1667,18 @@
 		function groupSection( label, keys, byCategory, meta, todayMid ) {
 			var section = el( 'div', 'wpcc-group-section' );
 			if ( label ) {
-				section.appendChild( el( 'div', 'wpcc-group-head', '<span>' + escapeHtml( label ) + '</span><i></i>' ) );
+				section.appendChild( asHeading( el( 'div', 'wpcc-group-head', '<span>' + escapeHtml( label ) + '</span><i></i>' ), 3 ) );
 			}
 
 			var grid = el( 'div', 'wpcc-card-grid' );
 			keys.forEach( function ( key ) {
-				grid.appendChild( categoryCard( key, byCategory[ key ], meta[ key ], todayMid ) );
+				grid.appendChild( categoryCard( key, byCategory[ key ], meta[ key ], todayMid, label ? 4 : 3 ) );
 			} );
 			section.appendChild( grid );
 			return section;
 		}
 
-		function categoryCard( key, events, cat, todayMid ) {
+		function categoryCard( key, events, cat, todayMid, headingLevel ) {
 			cat = cat || { label: key, icon: '📌', color: '#5A5A5A' };
 
 			// A multi-day event that's still running counts as current, not past.
@@ -1663,7 +1696,7 @@
 			var card = el( 'div', 'wpcc-card' );
 			setCat( card, cat.color );
 
-			card.appendChild( el( 'div', 'wpcc-card-head',
+			card.appendChild( asHeading( el( 'div', 'wpcc-card-head',
 				iconHtml( cat.icon, 20 ) +
 				'<span class="wpcc-card-label">' + escapeHtml( cat.label ) + '</span>' +
 				// The hidden word makes this read as "5 events" rather than a
@@ -1675,7 +1708,7 @@
 							( strings.eventSingular || 'event' ) :
 							( strings.eventPlural || 'events' )
 					) + '</span></span>'
-			) );
+			), headingLevel || 3 ) );
 
 			var list = el( 'div', 'wpcc-card-list' );
 			// Kept for the accessible name sizeCardLists() applies when this
@@ -1756,7 +1789,7 @@
 			var range = alignedRange( state.unit, state.offset );
 
 			var frame = el( 'div', 'wpcc-grid-frame' );
-			frame.appendChild( el( 'div', 'wpcc-grid-title', escapeHtml( monthTitle( range.start, range.end ) ) ) );
+			frame.appendChild( asHeading( el( 'div', 'wpcc-grid-title', escapeHtml( monthTitle( range.start, range.end ) ) ), 3 ) );
 
 			if ( 'day' === state.unit ) {
 				frame.appendChild( dayView( kept, range.start ) );
@@ -1946,7 +1979,7 @@
 
 			if ( ! matches.length ) {
 				var none = ( strings.searchNoneOne || 'No events match "%s" in the current view.' ).replace( '%s', state.search );
-				wrap.appendChild( el( 'div', 'wpcc-search-count', escapeHtml( none ) ) );
+				wrap.appendChild( asHeading( el( 'div', 'wpcc-search-count', escapeHtml( none ) ), 3 ) );
 				announce( none );
 				wrap.appendChild( el( 'div', 'wpcc-empty', escapeHtml( strings.searchHint || '' ) ) );
 				return wrap;
@@ -1955,7 +1988,7 @@
 			var count = ( strings.searchCount || '%1$d events match "%2$s" in the current view' )
 				.replace( '%1$d', matches.length )
 				.replace( '%2$s', state.search );
-			wrap.appendChild( el( 'div', 'wpcc-search-count', escapeHtml( count ) ) );
+			wrap.appendChild( asHeading( el( 'div', 'wpcc-search-count', escapeHtml( count ) ), 3 ) );
 			announce( count );
 
 			var list = el( 'div', 'wpcc-search-list' );
@@ -1977,7 +2010,7 @@
 						escapeHtml( fmtTime( ev.start, ev.isAllDay, strings.allDay, locale ) ) +
 					'</span>' +
 				'</div>' +
-				'<div class="wpcc-detail-title">' + escapeHtml( ev.title ) + '</div>';
+				'<div class="wpcc-detail-title" role="heading" aria-level="4">' + escapeHtml( ev.title ) + '</div>';
 
 			if ( ev.location ) {
 				html += '<div class="wpcc-detail-loc"><span aria-hidden="true">📍</span> <a href="https://www.google.com/maps/search/?api=1&query=' +

@@ -79,6 +79,7 @@ class WPCC_Shortcode {
 				'about'        => $settings['show_about'] ? 'yes' : 'no',
 				'categories'   => '',
 				'max_width'    => '',
+				'title'        => '',
 				'submit_url'   => $settings['submit_url'],
 				// iframe mode only.
 				'url'          => $settings['calendar_url'],
@@ -127,6 +128,7 @@ class WPCC_Shortcode {
 			'submitLabel'     => $settings['submit_label'],
 			'timezone'        => wp_timezone_string(),
 			'locale'          => str_replace( '_', '-', get_locale() ),
+			'title'           => '' !== trim( $atts['title'] ) ? sanitize_text_field( $atts['title'] ) : __( 'Categorized Calendar Events', 'calendarcats' ),
 			'strings'         => self::strings(),
 		);
 
@@ -142,6 +144,8 @@ class WPCC_Shortcode {
 		<div
 			id="<?php echo esc_attr( $id ); ?>"
 			class="<?php echo esc_attr( $classes ); ?>"
+			role="region"
+			aria-label="<?php echo esc_attr( $config['title'] ); ?>"
 			style="<?php echo esc_attr( $style ); ?>"
 			data-wpcc-config="<?php echo esc_attr( wp_json_encode( $config ) ); ?>"
 		>
@@ -240,6 +244,10 @@ class WPCC_Shortcode {
 			'loading'              => __( 'Loading events…', 'calendarcats' ),
 			'newTab'               => __( 'opens in a new tab', 'calendarcats' ),
 			'searchLabel'          => __( 'Search events', 'calendarcats' ),
+			'searchResults'        => __( 'Search results', 'calendarcats' ),
+			'eventsRegion'         => __( 'Events', 'calendarcats' ),
+			'calendarNav'          => __( 'Calendar navigation', 'calendarcats' ),
+			'filterGroup'          => __( 'Filter by category', 'calendarcats' ),
 			'eventDetails'         => __( 'Event details', 'calendarcats' ),
 			'searchPlaceholder'    => __( 'Search events in this view…', 'calendarcats' ),
 			'clearSearch'          => __( 'Clear search', 'calendarcats' ),
